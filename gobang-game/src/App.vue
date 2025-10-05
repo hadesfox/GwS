@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import GameBoard from './components/GameBoard.vue';
-import GameInfo from './components/GameInfo.vue';
-import GameControl from './components/GameControl.vue';
-import ProfessionalPanel from './components/ProfessionalPanel.vue';
-import GameStartScreen from './components/GameStartScreen.vue';
-import ManaBar from './components/ManaBar.vue';
-import SkillPanel from './components/SkillPanel.vue';
-import { useGobang } from './composables/useGobang';
-import type { GameMode, SkillType } from './types/game';
+import { ref, computed, watch } from "vue";
+import GameBoard from "./components/GameBoard.vue";
+import GameInfo from "./components/GameInfo.vue";
+import GameControl from "./components/GameControl.vue";
+import ProfessionalPanel from "./components/ProfessionalPanel.vue";
+import GameStartScreen from "./components/GameStartScreen.vue";
+import ManaBar from "./components/ManaBar.vue";
+import SkillPanel from "./components/SkillPanel.vue";
+import { useGobang } from "./composables/useGobang";
+import type { GameMode, SkillType } from "./types/game";
 
 const {
   board,
@@ -25,6 +25,9 @@ const {
   blackMana,
   whiteMana,
   skillState,
+  skipNextTurn,
+  counterWindowOpen,
+  counterWindowPlayer,
   makeMove,
   undo,
   restart,
@@ -33,7 +36,8 @@ const {
   declineSwap,
   chooseFiveOffer,
   useSkill,
-  executeSkillEffect
+  executeSkillEffect,
+  closeCounterWindow,
 } = useGobang();
 
 const gameStarted = ref(false);
@@ -49,28 +53,31 @@ const backToStart = () => {
 };
 
 const canUndo = computed(() => {
-  if (mode.value === 'professional') {
+  if (mode.value === "professional") {
     return false;
   }
   return moveHistory.value.length > 0;
 });
 
 const showDecisionHint = computed(() => {
-  return mode.value === 'professional' && 
-         (professionalPhase.value === 'three-swap' || professionalPhase.value === 'five-choose');
+  return (
+    mode.value === "professional" &&
+    (professionalPhase.value === "three-swap" ||
+      professionalPhase.value === "five-choose")
+  );
 });
 
 const getDecisionHintText = computed(() => {
-  if (professionalPhase.value === 'three-swap') {
-    return '白方请在下方操作面板中选择是否交换黑白';
+  if (professionalPhase.value === "three-swap") {
+    return "白方请在下方操作面板中选择是否交换黑白";
   }
-  if (professionalPhase.value === 'five-choose') {
-    return `${hasSwapped.value ? '黑方' : '白方'}请在下方操作面板中选择落子点`;
+  if (professionalPhase.value === "five-choose") {
+    return `${hasSwapped.value ? "黑方" : "白方"}请在下方操作面板中选择落子点`;
   }
-  return '';
+  return "";
 });
 
-const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
+const handleSkillUse = (player: "black" | "white", skillId: SkillType) => {
   const success = useSkill(player, skillId);
   if (success) {
     console.log(`${player} activated skill: ${skillId}`);
@@ -82,7 +89,7 @@ const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
 const handleExecuteSkill = (row: number, col: number) => {
   const success = executeSkillEffect(row, col);
   if (!success) {
-    console.log('Invalid skill target');
+    console.log("Invalid skill target");
   }
 };
 
@@ -90,18 +97,26 @@ const handleExecuteSkill = (row: number, col: number) => {
 watch(showDecisionHint, (newValue) => {
   if (newValue) {
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
+  }
+});
+
+// 添加自动关闭反制窗口的定时器
+watch(counterWindowOpen, (isOpen) => {
+  if (isOpen) {
+    setTimeout(() => {
+      if (counterWindowOpen.value) {
+        closeCounterWindow();
+      }
+    }, 3000); // 3秒后自动执行
   }
 });
 </script>
 
 <template>
-  <GameStartScreen 
-    v-if="!gameStarted"
-    @start-game="startGame"
-  />
-  
+  <GameStartScreen v-if="!gameStarted" @start-game="startGame" />
+
   <div v-else class="app">
     <header class="header">
       <h1>五子棋游戏</h1>
@@ -112,6 +127,33 @@ watch(showDecisionHint, (newValue) => {
     </header>
 
     <main class="main">
+      <!-- 反制窗口提示 -->
+      <div v-if="counterWindowOpen" class="counter-window">
+        <div class="counter-content">
+          <div class="counter-icon">⚠️</div>
+          <div class="counter-text">
+            <h3>力拔山兮即将发动！</h3>
+            <p>
+              {{
+                counterWindowPlayer === "black" ? "黑方" : "白方"
+              }}可以使用"东山再起"反制
+            </p>
+            <p class="counter-timer">3秒后自动执行...</p>
+          </div>
+          <button class="counter-close-btn" @click="closeCounterWindow">
+            确认不反制
+          </button>
+        </div>
+      </div>
+
+      <!-- 跳过回合提示 -->
+      <div v-if="skipNextTurn" class="skip-turn-hint">
+        <span class="skip-icon">💤</span>
+        {{
+          skipNextTurn === "black" ? "黑方" : "白方"
+        }}下一回合将被跳过（静如止水效果）
+      </div>
+
       <div v-if="showDecisionHint" class="top-hint">
         {{ getDecisionHintText }}
       </div>
@@ -144,13 +186,13 @@ watch(showDecisionHint, (newValue) => {
             <span class="player-icon">⚫</span>
             <span>黑方</span>
           </div>
-          <ManaBar 
-            :mana="blackMana" 
+          <ManaBar
+            :mana="blackMana"
             player-side="black"
             :total-moves="moveHistory.length"
           />
-          <SkillPanel 
-            :mana="blackMana" 
+          <SkillPanel
+            :mana="blackMana"
             player-side="black"
             :disabled="currentPlayer !== 'black' || isGameOver"
             @use-skill="(skillId) => handleSkillUse('black', skillId)"
@@ -208,13 +250,13 @@ watch(showDecisionHint, (newValue) => {
             <span class="player-icon">⚪</span>
             <span>白方</span>
           </div>
-          <ManaBar 
-            :mana="whiteMana" 
+          <ManaBar
+            :mana="whiteMana"
             player-side="white"
             :total-moves="moveHistory.length"
           />
-          <SkillPanel 
-            :mana="whiteMana" 
+          <SkillPanel
+            :mana="whiteMana"
             player-side="white"
             :disabled="currentPlayer !== 'white' || isGameOver"
             @use-skill="(skillId) => handleSkillUse('white', skillId)"
@@ -222,22 +264,20 @@ watch(showDecisionHint, (newValue) => {
         </div>
       </div>
 
-      <GameControl
-        :can-undo="canUndo"
-        @undo="undo"
-        @restart="restart"
-      />
+      <GameControl :can-undo="canUndo" @undo="undo" @restart="restart" />
 
-      <div v-if="mode === 'professional' && forbiddenMoves.length > 0" class="hint-box">
+      <div
+        v-if="mode === 'professional' && forbiddenMoves.length > 0"
+        class="hint-box"
+      >
         <div class="hint-icon">⚠️</div>
         <div class="hint-text">
-          当前棋盘上有 <strong>{{ forbiddenMoves.length }}</strong> 个禁手位置（红色✕标记）
+          当前棋盘上有
+          <strong>{{ forbiddenMoves.length }}</strong> 个禁手位置（红色✕标记）
         </div>
       </div>
 
-      <button class="back-btn" @click="backToStart">
-        ← 返回模式选择
-      </button>
+      <button class="back-btn" @click="backToStart">← 返回模式选择</button>
     </main>
 
     <footer class="footer">
@@ -283,6 +323,123 @@ watch(showDecisionHint, (newValue) => {
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
+}
+
+.counter-window {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.counter-content {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  max-width: 500px;
+  text-align: center;
+  color: white;
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.counter-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.counter-text h3 {
+  margin: 0 0 15px 0;
+  font-size: 28px;
+}
+
+.counter-text p {
+  margin: 10px 0;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.counter-timer {
+  font-weight: bold;
+  font-size: 18px;
+  margin-top: 20px;
+}
+
+.counter-close-btn {
+  margin-top: 30px;
+  padding: 15px 40px;
+  background: white;
+  color: #ff6b6b;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.counter-close-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+}
+
+.skip-turn-hint {
+  background: linear-gradient(135deg, #9c27b0, #ba68c8);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.skip-icon {
+  font-size: 24px;
 }
 
 .top-hint {
@@ -446,17 +603,17 @@ watch(showDecisionHint, (newValue) => {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .side-panel {
     width: 100%;
     max-width: 600px;
   }
-  
+
   .left-panel,
   .right-panel {
     align-items: center;
   }
-  
+
   .dual-board {
     grid-template-columns: 1fr;
   }
@@ -466,7 +623,7 @@ watch(showDecisionHint, (newValue) => {
   .header h1 {
     font-size: 28px;
   }
-  
+
   .dual-board {
     gap: 15px;
   }

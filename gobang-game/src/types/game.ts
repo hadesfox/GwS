@@ -45,9 +45,11 @@ export interface ManaState {
 
 // 技能选择状态
 export interface SkillState {
-  isSelecting: boolean;
+   isSelecting: boolean;
   skillType: SkillType | null;
   player: 'black' | 'white' | null;
+  canCounter?: boolean;  // 新增：是否可以反制
+  counterTarget?: 'black' | 'white';  // 新增：反制的目标玩家
 }
 
 export interface GameState {
@@ -89,22 +91,22 @@ export const SKILLS: Skill[] = [
   {
     id: 'still-water',
     name: '静如止水',
-    description: '技能描述待定',
-    manaCost: 2,
+    description: '让对方暂停一回合，自己多走一步',
+    manaCost: 5,
     icon: '💧'
   },
   {
     id: 'mighty-power',
     name: '力拔山兮',
-    description: '技能描述待定',
-    manaCost: 5,
+    description: '清空所有棋子，并获得胜利',
+    manaCost: 15,
     icon: '💪'
   },
   {
     id: 'comeback',
     name: '东山再起',
-    description: '技能描述待定',
-    manaCost: 4,
+    description: '反制力拔山兮，让对局继续进行，棋子随机摆放',
+    manaCost: 13,
     icon: '🔄'
   },
   {
