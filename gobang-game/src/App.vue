@@ -5,10 +5,10 @@ import GameInfo from './components/GameInfo.vue';
 import GameControl from './components/GameControl.vue';
 import ProfessionalPanel from './components/ProfessionalPanel.vue';
 import GameStartScreen from './components/GameStartScreen.vue';
-import ManaBar from './components/ManaBar.vue';  // **新增**
-import SkillPanel from './components/SkillPanel.vue';  // **新增**
+import ManaBar from './components/ManaBar.vue';
+import SkillPanel from './components/SkillPanel.vue';
 import { useGobang } from './composables/useGobang';
-import type { GameMode, SkillType } from '../types/game';
+import type { GameMode, SkillType } from './types/game';
 
 const {
   board,
@@ -22,8 +22,8 @@ const {
   fiveOffers,
   forbiddenMoves,
   hasSwapped,
-  blackMana,  // **新增**
-  whiteMana,  // **新增**
+  blackMana,
+  whiteMana,
   makeMove,
   undo,
   restart,
@@ -31,7 +31,7 @@ const {
   swapPlayers,
   declineSwap,
   chooseFiveOffer,
-  useSkill  // **新增**
+  useSkill
 } = useGobang();
 
 const gameStarted = ref(false);
@@ -68,10 +68,8 @@ const getDecisionHintText = computed(() => {
   return '';
 });
 
-// **新增：处理技能使用**
 const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
   useSkill(player, skillId);
-  // TODO: 显示技能使用提示
   console.log(`${player} used skill: ${skillId}`);
 };
 </script>
@@ -124,10 +122,8 @@ const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
             <span>黑方</span>
           </div>
           
-          <!-- **新增：法力值条** -->
           <ManaBar :mana="blackMana" player-side="black" />
           
-          <!-- **新增：技能面板** -->
           <SkillPanel 
             :mana="blackMana" 
             player-side="black"
@@ -146,6 +142,7 @@ const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
             :professional-phase="professionalPhase"
             :move-count="moveHistory.length"
             :has-swapped="hasSwapped"
+            :mode="mode"
             @make-move="makeMove"
           />
         </div>
@@ -157,10 +154,8 @@ const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
             <span>白方</span>
           </div>
           
-          <!-- **新增：法力值条** -->
           <ManaBar :mana="whiteMana" player-side="white" />
           
-          <!-- **新增：技能面板** -->
           <SkillPanel 
             :mana="whiteMana" 
             player-side="white"
@@ -179,6 +174,7 @@ const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
             :professional-phase="professionalPhase"
             :move-count="moveHistory.length"
             :has-swapped="hasSwapped"
+            :mode="mode"
             @make-move="makeMove"
           />
         </div>

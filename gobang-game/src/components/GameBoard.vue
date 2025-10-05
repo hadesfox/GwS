@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
-import type { Player, Position, ProfessionalPhase } from '../types/game';
+import type { Player, Position, ProfessionalPhase, GameMode } from '../types/game';
 import { BOARD_SIZE } from '../types/game';
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
   professionalPhase?: ProfessionalPhase;
   moveCount: number;
   hasSwapped?: boolean;
+  mode: GameMode;
 }
 
 interface Emits {
@@ -26,7 +27,8 @@ const props = withDefaults(defineProps<Props>(), {
   forbiddenMoves: () => [],
   fiveOffers: () => [],
   professionalPhase: 'normal',
-  hasSwapped: false
+  hasSwapped: false,
+  mode: 'basic'
 });
 
 const emit = defineEmits<Emits>();
@@ -42,18 +44,23 @@ const cellSize = computed(() => {
 const canMove = computed(() => {
   if (props.isGameOver) return false;
   
-  // **新增：三手交换阶段锁定棋盘**
+  // 基础模式：简单的回合判断
+  if (props.mode === 'basic') {
+    return props.currentPlayer === props.playerSide;
+  }
+  
+  // 以下是专业模式的特殊规则
+  
+  // 三手交换阶段锁定棋盘
   if (props.professionalPhase === 'three-swap') {
-    return false; // 三手交换时完全锁定棋盘
+    return false;
   }
   
   // 五手两打选择阶段的锁定逻辑
   if (props.professionalPhase === 'five-choose') {
     if (props.hasSwapped) {
-      // 交换后：黑方选择，黑方棋盘锁定
       if (props.playerSide === 'black') return false;
     } else {
-      // 未交换：白方选择，白方棋盘锁定
       if (props.playerSide === 'white') return false;
     }
   }
@@ -119,11 +126,13 @@ onUnmounted(() => {
           :style="{ width: `${cellSize}px`, height: `${cellSize}px` }"
           @click="handleClick(rowIndex, colIndex)"
         >
-          <div v-if="!cell && isForbidden(rowIndex, colIndex)" class="forbidden-mark">
+          <!-- 禁手标记（仅专业模式） -->
+          <div v-if="mode === 'professional' && !cell && isForbidden(rowIndex, colIndex)" class="forbidden-mark">
             ✕
           </div>
           
-          <div v-if="isFiveOffer(rowIndex, colIndex)" class="offer-mark">
+          <!-- 五手两打候选标记（仅专业模式） -->
+          <div v-if="mode === 'professional' && isFiveOffer(rowIndex, colIndex)" class="offer-mark">
             {{ fiveOffers?.findIndex(pos => pos.row === rowIndex && pos.col === colIndex) + 1 }}
           </div>
           
