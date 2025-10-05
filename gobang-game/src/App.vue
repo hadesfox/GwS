@@ -144,7 +144,11 @@ watch(showDecisionHint, (newValue) => {
             <span class="player-icon">⚫</span>
             <span>黑方</span>
           </div>
-          <ManaBar :mana="blackMana" player-side="black" />
+          <ManaBar 
+            :mana="blackMana" 
+            player-side="black"
+            :total-moves="moveHistory.length"
+          />
           <SkillPanel 
             :mana="blackMana" 
             player-side="black"
@@ -204,7 +208,11 @@ watch(showDecisionHint, (newValue) => {
             <span class="player-icon">⚪</span>
             <span>白方</span>
           </div>
-          <ManaBar :mana="whiteMana" player-side="white" />
+          <ManaBar 
+            :mana="whiteMana" 
+            player-side="white"
+            :total-moves="moveHistory.length"
+          />
           <SkillPanel 
             :mana="whiteMana" 
             player-side="white"
