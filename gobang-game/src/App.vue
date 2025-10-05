@@ -24,6 +24,7 @@ const {
   hasSwapped,
   blackMana,
   whiteMana,
+  skillState,
   makeMove,
   undo,
   restart,
@@ -31,7 +32,9 @@ const {
   swapPlayers,
   declineSwap,
   chooseFiveOffer,
-  useSkill
+  useSkill,
+  executeSkillEffect,
+  cancelSkillSelection
 } = useGobang();
 
 const gameStarted = ref(false);
@@ -69,8 +72,19 @@ const getDecisionHintText = computed(() => {
 });
 
 const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
-  useSkill(player, skillId);
-  console.log(`${player} used skill: ${skillId}`);
+  const success = useSkill(player, skillId);
+  if (success) {
+    console.log(`${player} activated skill: ${skillId}`);
+  } else {
+    console.log(`${player} failed to use skill: ${skillId}`);
+  }
+};
+
+const handleExecuteSkill = (row: number, col: number) => {
+  const success = executeSkillEffect(row, col);
+  if (!success) {
+    console.log('Invalid skill target');
+  }
 };
 </script>
 
@@ -143,7 +157,9 @@ const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
             :move-count="moveHistory.length"
             :has-swapped="hasSwapped"
             :mode="mode"
+            :skill-state="skillState"
             @make-move="makeMove"
+            @execute-skill="handleExecuteSkill"
           />
         </div>
 
@@ -175,7 +191,9 @@ const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
             :move-count="moveHistory.length"
             :has-swapped="hasSwapped"
             :mode="mode"
+            :skill-state="skillState"
             @make-move="makeMove"
+            @execute-skill="handleExecuteSkill"
           />
         </div>
       </div>

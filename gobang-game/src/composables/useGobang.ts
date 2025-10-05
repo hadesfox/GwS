@@ -1,8 +1,8 @@
 // src/composables/useGobang.ts
 
 import { ref, computed } from 'vue';
-import type { Player, Position, GameState, GameMode, ProfessionalPhase, Pattern, ManaState, SkillType } from '../types/game';
-import { BOARD_SIZE, WIN_COUNT, MAX_MANA, MOVES_PER_MANA } from '../types/game';
+import type { Player, Position, GameState, GameMode, ProfessionalPhase, Pattern, ManaState, SkillType, SkillState } from '../types/game';
+import { BOARD_SIZE, WIN_COUNT, MAX_MANA, MOVES_PER_MANA, SKILLS } from '../types/game';
 
 export function useGobang() {
   const initBoard = (): Player[][] => {
@@ -33,6 +33,13 @@ export function useGobang() {
     moveCounter: 0
   });
 
+  // 技能选择状态
+  const skillState = ref<SkillState>({
+    isSelecting: false,
+    skillType: null,
+    player: null
+  });
+
   const lastMove = computed(() => {
     return moveHistory.value.length > 0 
       ? moveHistory.value[moveHistory.value.length - 1] 
@@ -53,10 +60,97 @@ export function useGobang() {
     }
   };
 
-  // 使用技能（占位函数）
+  // 使用技能
   const useSkill = (player: 'black' | 'white', skillId: SkillType): boolean => {
-    console.log(`${player} wants to use skill: ${skillId}`);
-    return false;
+    const mana = player === 'black' ? blackMana : whiteMana;
+    const skill = SKILLS.find(s => s.id === skillId);
+    
+    if (!skill) return false;
+    
+    // 检查法力值是否足够
+    if (mana.value.current < skill.manaCost) {
+      return false;
+    }
+    
+    // 根据技能类型执行不同的效果
+    switch (skillId) {
+      case 'fly-sand':
+        // 飞沙走石：进入选择模式，让玩家选择要移除的棋子
+        skillState.value = {
+          isSelecting: true,
+          skillType: 'fly-sand',
+          player: player
+        };
+        return true;
+      
+      default:
+        console.log(`Skill ${skillId} not implemented yet`);
+        return false;
+    }
+  };
+
+  // 执行技能效果
+  const executeSkillEffect = (row: number, col: number): boolean => {
+    if (!skillState.value.isSelecting || !skillState.value.skillType) {
+      return false;
+    }
+    
+    const player = skillState.value.player!;
+    const skillType = skillState.value.skillType;
+    const mana = player === 'black' ? blackMana : whiteMana;
+    const skill = SKILLS.find(s => s.id === skillType);
+    
+    if (!skill) return false;
+    
+    switch (skillType) {
+      case 'fly-sand': {
+        // 飞沙走石：移除指定位置的棋子
+        if (board.value[row][col] === null) {
+          // 该位置没有棋子，无效操作
+          return false;
+        }
+        
+        // 移除棋子
+        board.value[row][col] = null;
+        
+        // 从移动历史中移除该位置（如果存在）
+        const moveIndex = moveHistory.value.findIndex(
+          move => move.row === row && move.col === col
+        );
+        if (moveIndex !== -1) {
+          moveHistory.value.splice(moveIndex, 1);
+        }
+        
+        // 消耗法力值
+        mana.value.current -= skill.manaCost;
+        
+        // 重置技能状态
+        skillState.value = {
+          isSelecting: false,
+          skillType: null,
+          player: null
+        };
+        
+        // 更新禁手位置（如果是专业模式）
+        if (mode.value === 'professional') {
+          updateForbiddenMoves();
+        }
+        
+        return true;
+      }
+      
+      default:
+        return false;
+    }
+  };
+
+  // 取消技能选择
+  const cancelSkillSelection = () => {
+    skillState.value = {
+      isSelecting: false,
+      skillType: null,
+      player: null
+    };
   };
 
   const checkPattern = (row: number, col: number, dx: number, dy: number, player: Player): Pattern => {
@@ -218,7 +312,7 @@ export function useGobang() {
     if (mode.value === 'professional' && professionalPhase.value === 'five-offer') {
       if (fiveOffers.value.length < 2) {
         if (hasSwapped.value) {
-          // 交换过，白方提供落点，不需要检查禁手
+          // 交换过，白方提供落点
         } else {
           // 未交换，黑方提供落点，检查禁手
           if (isForbiddenMove(row, col)) {
@@ -237,7 +331,7 @@ export function useGobang() {
       return false;
     }
 
-    // 专业模式：检查禁手（仅黑方）
+    // 专业模式：检查禁手
     if (mode.value === 'professional' && currentPlayer.value === 'black') {
       if (isForbiddenMove(row, col)) {
         winner.value = 'white';
@@ -412,6 +506,13 @@ export function useGobang() {
       moveCounter: 0
     };
 
+    // 重置技能状态
+    skillState.value = {
+      isSelecting: false,
+      skillType: null,
+      player: null
+    };
+
     // 专业模式开局：第1手中心黑子
     if (mode.value === 'professional') {
       const centerPos = Math.floor(BOARD_SIZE / 2);
@@ -432,7 +533,8 @@ export function useGobang() {
     fiveOffers: fiveOffers.value,
     forbiddenMoves: forbiddenMoves.value,
     blackMana: blackMana.value,
-    whiteMana: whiteMana.value
+    whiteMana: whiteMana.value,
+    skillState: skillState.value
   }));
 
   return {
@@ -449,6 +551,7 @@ export function useGobang() {
     hasSwapped,
     blackMana,
     whiteMana,
+    skillState,
     gameState,
     makeMove,
     undo,
@@ -457,6 +560,8 @@ export function useGobang() {
     swapPlayers,
     declineSwap,
     chooseFiveOffer,
-    useSkill
+    useSkill,
+    executeSkillEffect,
+    cancelSkillSelection
   };
 }
