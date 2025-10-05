@@ -11,7 +11,6 @@ interface Emits {
   (e: 'swapPlayers'): void;
   (e: 'declineSwap'): void;
   (e: 'chooseFiveOffer', index: number): void;
-  (e: 'swapAfterFive', index: number): void;
 }
 
 const props = defineProps<Props>();
@@ -34,7 +33,7 @@ const emit = defineEmits<Emits>();
       </div>
       <div class="action-buttons">
         <button class="action-btn swap-btn" @click="emit('swapPlayers')">
-          <span class="btn-icon">🔁</span>
+          <span class="btn-icon">🔀</span>
           <span>交换黑白</span>
           <span class="btn-hint">我方执黑</span>
         </button>
@@ -65,14 +64,14 @@ const emit = defineEmits<Emits>();
       </div>
     </div>
 
-    <!-- 五手两打 - 选择阶段 -->
+    <!-- 五手两打 - 选择阶段（修改：去掉交换选项） -->
     <div v-if="phase === 'five-choose'" class="phase-panel five-choose">
       <div class="phase-title">
         <span class="phase-icon">🎯</span>
-        五手两打 - 选择并决定
+        五手两打 - 选择落子点
       </div>
       <div class="phase-desc">
-        白方需要从黑方提供的两个选点中选择一个，并决定是否交换
+        白方需要从黑方提供的两个选点中选择一个作为第5手（黑子）
       </div>
       <div class="offers-grid">
         <div v-for="(offer, index) in fiveOffers" :key="index" class="offer-option">
@@ -82,20 +81,12 @@ const emit = defineEmits<Emits>();
           </div>
           <div class="offer-actions">
             <button 
-              class="action-btn choose-btn"
+              class="action-btn choose-btn-full"
               @click="emit('chooseFiveOffer', index)"
             >
               <span class="btn-icon">✓</span>
               <span>选择此点</span>
-              <span class="btn-hint">不交换</span>
-            </button>
-            <button 
-              class="action-btn swap-choose-btn"
-              @click="emit('swapAfterFive', index)"
-            >
-              <span class="btn-icon">🔁</span>
-              <span>选择并交换</span>
-              <span class="btn-hint">我方执黑</span>
+              <span class="btn-hint">放置黑子并继续</span>
             </button>
           </div>
         </div>
@@ -207,14 +198,10 @@ const emit = defineEmits<Emits>();
   color: white;
 }
 
-.choose-btn {
+.choose-btn-full {
   background: linear-gradient(135deg, #4caf50, #388e3c);
   color: white;
-}
-
-.swap-choose-btn {
-  background: linear-gradient(135deg, #2196f3, #1976d2);
-  color: white;
+  width: 100%;
 }
 
 .btn-icon {
@@ -272,10 +259,6 @@ const emit = defineEmits<Emits>();
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.offer-actions .action-btn {
-  width: 100%;
 }
 
 @media (max-width: 768px) {

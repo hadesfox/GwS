@@ -89,40 +89,31 @@ export function useGobang() {
       [1, -1]   // 副对角线
     ];
 
-    let liveThreeCount = 0;  // 活三数量
-    let fourCount = 0;       // 四（冲四+活四）数量
-    let longConnect = false; // 长连
+    let liveThreeCount = 0;
+    let fourCount = 0;
+    let longConnect = false;
 
     for (const [dx, dy] of directions) {
       const pattern = checkPattern(row, col, dx, dy, 'black');
       
-      // 检查长连（6连及以上）
       if (pattern.count >= 6) {
         longConnect = true;
         break;
       }
 
-      // 检查活三
       if (pattern.count === 3 && pattern.type === 'live') {
         liveThreeCount++;
       }
 
-      // 检查四（包括冲四和活四）
       if (pattern.count === 4) {
         fourCount++;
       }
     }
 
-    // 恢复棋盘
     board.value[row][col] = null;
 
-    // 长连禁手
     if (longConnect) return true;
-    
-    // 三三禁手（两个或以上活三）
     if (liveThreeCount >= 2) return true;
-    
-    // 四四禁手（两个或以上的四）
     if (fourCount >= 2) return true;
 
     return false;
@@ -152,16 +143,15 @@ export function useGobang() {
     if (!player) return false;
 
     const directions = [
-      [0, 1],   // 横向
-      [1, 0],   // 纵向
-      [1, 1],   // 主对角线
-      [1, -1]   // 副对角线
+      [0, 1],
+      [1, 0],
+      [1, 1],
+      [1, -1]
     ];
 
     for (const [dx, dy] of directions) {
       let count = 1;
 
-      // 正方向
       for (let i = 1; i < WIN_COUNT; i++) {
         const newRow = row + dx * i;
         const newCol = col + dy * i;
@@ -173,7 +163,6 @@ export function useGobang() {
         count++;
       }
 
-      // 反方向
       for (let i = 1; i < WIN_COUNT; i++) {
         const newRow = row - dx * i;
         const newCol = col - dy * i;
@@ -199,16 +188,22 @@ export function useGobang() {
       return false;
     }
 
+    // **新增：专业模式第一手必须在中心**
+    const centerPos = Math.floor(BOARD_SIZE / 2);
+    if (mode.value === 'professional' && moveHistory.value.length === 0) {
+      if (row !== centerPos || col !== centerPos) {
+        return false; // 第一手不在中心，拒绝落子
+      }
+    }
+
     // 专业模式：五手两打阶段 - 记录提供的选点
     if (mode.value === 'professional' && professionalPhase.value === 'five-offer') {
       if (fiveOffers.value.length < 2) {
-        // 检查是否为禁手
         if (isForbiddenMove(row, col)) {
           return false;
         }
         fiveOffers.value.push({ row, col });
         
-        // 两个选点都提供后，进入选择阶段
         if (fiveOffers.value.length === 2) {
           professionalPhase.value = 'five-choose';
           currentPlayer.value = 'white';
@@ -221,7 +216,6 @@ export function useGobang() {
     // 专业模式：检查禁手
     if (mode.value === 'professional' && currentPlayer.value === 'black') {
       if (isForbiddenMove(row, col)) {
-        // 黑方走禁手，白方获胜
         winner.value = 'white';
         isGameOver.value = true;
         return false;
@@ -237,7 +231,6 @@ export function useGobang() {
       return true;
     }
 
-    // 检查平局
     if (moveHistory.value.length === BOARD_SIZE * BOARD_SIZE) {
       isGameOver.value = true;
       return true;
@@ -246,16 +239,13 @@ export function useGobang() {
     // 专业模式阶段判断
     if (mode.value === 'professional') {
       if (moveHistory.value.length === 3) {
-        // 第3手后，进入三手交换阶段
         professionalPhase.value = 'three-swap';
         currentPlayer.value = 'white';
         updateForbiddenMoves();
         return true;
       } else if (moveHistory.value.length === 4 && professionalPhase.value === 'three-swap') {
-        // 白方选择不交换，黑方继续
         professionalPhase.value = 'normal';
       } else if (moveHistory.value.length === 5 && professionalPhase.value === 'normal') {
-        // 进入五手两打阶段
         professionalPhase.value = 'five-offer';
         currentPlayer.value = 'black';
         fiveOffers.value = [];
@@ -264,10 +254,7 @@ export function useGobang() {
       }
     }
 
-    // 切换玩家
     currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
-    
-    // 更新禁手位置
     updateForbiddenMoves();
     
     return true;
@@ -279,13 +266,11 @@ export function useGobang() {
       return;
     }
 
-    // 交换所有已下的棋子颜色
     for (const pos of moveHistory.value) {
       const currentColor = board.value[pos.row][pos.col];
       board.value[pos.row][pos.col] = currentColor === 'black' ? 'white' : 'black';
     }
 
-    // 当前玩家变为黑方
     currentPlayer.value = 'black';
     professionalPhase.value = 'normal';
     
@@ -304,7 +289,7 @@ export function useGobang() {
     updateForbiddenMoves();
   };
 
-  // 五手两打：选择一个选点
+  // **修改：五手两打 - 白方选择一个选点（不能交换）**
   const chooseFiveOffer = (offerIndex: number) => {
     if (mode.value !== 'professional' || 
         professionalPhase.value !== 'five-choose' ||
@@ -316,35 +301,10 @@ export function useGobang() {
     board.value[chosen.row][chosen.col] = 'black';
     moveHistory.value.push(chosen);
 
-    // 清除提供的选点
     fiveOffers.value = [];
     
-    // 进入交换决定阶段（白方决定是否交换）
-    // 这里简化处理：直接让白方继续
+    // 直接进入正常对弈，白方继续
     currentPlayer.value = 'white';
-    professionalPhase.value = 'normal';
-    
-    updateForbiddenMoves();
-  };
-
-  // 五手两打后交换
-  const swapAfterFive = (offerIndex: number) => {
-    if (mode.value !== 'professional' || professionalPhase.value !== 'five-choose') {
-      return;
-    }
-
-    const chosen = fiveOffers.value[offerIndex];
-    board.value[chosen.row][chosen.col] = 'black';
-    moveHistory.value.push(chosen);
-
-    // 交换所有已下的棋子
-    for (const pos of moveHistory.value) {
-      const currentColor = board.value[pos.row][pos.col];
-      board.value[pos.row][pos.col] = currentColor === 'black' ? 'white' : 'black';
-    }
-
-    fiveOffers.value = [];
-    currentPlayer.value = 'black';
     professionalPhase.value = 'normal';
     
     updateForbiddenMoves();
@@ -354,15 +314,12 @@ export function useGobang() {
   const undo = () => {
     if (moveHistory.value.length === 0) return;
 
-    // 专业模式特殊处理
     if (mode.value === 'professional') {
-      // 五手两打提供阶段，撤销选点
       if (professionalPhase.value === 'five-offer' && fiveOffers.value.length > 0) {
         fiveOffers.value.pop();
         return;
       }
       
-      // 其他专业模式阶段不允许悔棋
       if (professionalPhase.value !== 'normal') {
         return;
       }
@@ -429,7 +386,6 @@ export function useGobang() {
     setMode,
     swapPlayers,
     declineSwap,
-    chooseFiveOffer,
-    swapAfterFive
+    chooseFiveOffer
   };
 }
