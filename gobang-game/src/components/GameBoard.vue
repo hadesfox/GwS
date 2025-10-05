@@ -9,6 +9,8 @@ interface Props {
   lastMove?: Position | null;
   forbiddenMoves?: Position[];
   fiveOffers?: Position[];
+  currentPlayer: 'black' | 'white'; // 新增
+  playerSide: 'black' | 'white'; // 新增：当前画面控制方
 }
 
 interface Emits {
@@ -31,8 +33,13 @@ const cellSize = computed(() => {
   return containerSize / BOARD_SIZE;
 });
 
+// **新增：判断是否可以下棋**
+const canMove = computed(() => {
+  return !props.isGameOver && props.currentPlayer === props.playerSide;
+});
+
 const handleClick = (row: number, col: number) => {
-  if (props.isGameOver) return;
+  if (!canMove.value) return;
   emit('makeMove', row, col);
 };
 
@@ -62,7 +69,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="game-board">
+  <div class="game-board" :class="{ 'disabled': !canMove }">
     <div 
       class="board-grid"
       :style="{
@@ -78,22 +85,20 @@ onUnmounted(() => {
           :class="{ 
             'game-over': isGameOver,
             'forbidden': !cell && isForbidden(rowIndex, colIndex),
-            'five-offer': isFiveOffer(rowIndex, colIndex)
+            'five-offer': isFiveOffer(rowIndex, colIndex),
+            'not-my-turn': !canMove
           }"
           :style="{ width: `${cellSize}px`, height: `${cellSize}px` }"
           @click="handleClick(rowIndex, colIndex)"
         >
-          <!-- 禁手标记 -->
           <div v-if="!cell && isForbidden(rowIndex, colIndex)" class="forbidden-mark">
             ✕
           </div>
           
-          <!-- 五手两打候选标记 -->
           <div v-if="isFiveOffer(rowIndex, colIndex)" class="offer-mark">
             {{ fiveOffers?.findIndex(pos => pos.row === rowIndex && pos.col === colIndex) + 1 }}
           </div>
           
-          <!-- 棋子 -->
           <div 
             v-if="cell" 
             class="piece"
@@ -101,6 +106,13 @@ onUnmounted(() => {
           />
         </div>
       </template>
+    </div>
+    
+    <!-- 非回合提示遮罩 -->
+    <div v-if="!canMove && !isGameOver" class="turn-overlay">
+      <div class="turn-message">
+        等待{{ currentPlayer === 'black' ? '黑方' : '白方' }}下棋...
+      </div>
     </div>
   </div>
 </template>
@@ -111,6 +123,12 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
   padding: 20px;
+  position: relative;
+}
+
+.game-board.disabled {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .board-grid {
@@ -132,11 +150,12 @@ onUnmounted(() => {
   transition: background-color 0.2s;
 }
 
-.cell:not(.game-over):not(.forbidden):hover {
+.cell:not(.game-over):not(.forbidden):not(.not-my-turn):hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.cell.game-over {
+.cell.game-over,
+.cell.not-my-turn {
   cursor: not-allowed;
 }
 
@@ -203,8 +222,27 @@ onUnmounted(() => {
   animation: pulse 1s infinite;
 }
 
-.piece:not(.last-move):hover {
-  transform: scale(1.05);
+.turn-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.turn-message {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px 40px;
+  border-radius: 15px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes pulse {

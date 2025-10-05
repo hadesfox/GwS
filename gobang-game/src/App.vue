@@ -41,7 +41,8 @@ const backToStart = () => {
 };
 
 const canUndo = computed(() => {
-  if (mode.value === 'professional' && professionalPhase.value !== 'normal') {
+  // 专业模式禁止悔棋
+  if (mode.value === 'professional') {
     return false;
   }
   return moveHistory.value.length > 0;
@@ -49,13 +50,11 @@ const canUndo = computed(() => {
 </script>
 
 <template>
-  <!-- 游戏开始界面 -->
   <GameStartScreen 
     v-if="!gameStarted"
     @start-game="startGame"
   />
   
-  <!-- 游戏主界面 -->
   <div v-else class="app">
     <header class="header">
       <h1>🎮 五子棋游戏</h1>
@@ -85,14 +84,42 @@ const canUndo = computed(() => {
         @choose-five-offer="chooseFiveOffer"
       />
 
-      <GameBoard
-        :board="board"
-        :is-game-over="isGameOver"
-        :last-move="lastMove"
-        :forbidden-moves="forbiddenMoves"
-        :five-offers="fiveOffers"
-        @make-move="makeMove"
-      />
+      <!-- 双画面布局 -->
+      <div class="dual-board-container">
+        <div class="player-section black-section">
+          <div class="player-label">
+            <span class="player-icon">⚫</span>
+            <span>黑方</span>
+          </div>
+          <GameBoard
+            :board="board"
+            :is-game-over="isGameOver"
+            :last-move="lastMove"
+            :forbidden-moves="forbiddenMoves"
+            :five-offers="fiveOffers"
+            :current-player="currentPlayer"
+            :player-side="'black'"
+            @make-move="makeMove"
+          />
+        </div>
+
+        <div class="player-section white-section">
+          <div class="player-label">
+            <span class="player-icon">⚪</span>
+            <span>白方</span>
+          </div>
+          <GameBoard
+            :board="board"
+            :is-game-over="isGameOver"
+            :last-move="lastMove"
+            :forbidden-moves="forbiddenMoves"
+            :five-offers="fiveOffers"
+            :current-player="currentPlayer"
+            :player-side="'white'"
+            @make-move="makeMove"
+          />
+        </div>
+      </div>
 
       <GameControl
         :can-undo="canUndo"
@@ -152,9 +179,47 @@ const canUndo = computed(() => {
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+}
+
+.dual-board-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.player-section {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.black-section {
+  border: 3px solid #333;
+}
+
+.white-section {
+  border: 3px solid #e0e0e0;
+}
+
+.player-label {
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.player-icon {
+  font-size: 32px;
 }
 
 .hint-box {
@@ -210,6 +275,12 @@ const canUndo = computed(() => {
   font-size: 14px;
   background: rgba(255, 255, 255, 0.5);
   border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1200px) {
+  .dual-board-container {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {

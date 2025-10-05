@@ -33,7 +33,6 @@ export function useGobang() {
     let leftOpen = false;
     let rightOpen = false;
 
-    // 正向检查
     let i = 1;
     while (true) {
       const newRow = row + dx * i;
@@ -50,7 +49,6 @@ export function useGobang() {
       }
     }
 
-    // 反向检查
     i = 1;
     while (true) {
       const newRow = row - dx * i;
@@ -75,18 +73,16 @@ export function useGobang() {
     return { count, openEnds, type };
   };
 
-  // 检查是否为禁手（仅对黑方）
   const isForbiddenMove = (row: number, col: number): boolean => {
     if (mode.value !== 'professional') return false;
     
-    // 临时放置黑子
     board.value[row][col] = 'black';
 
     const directions = [
-      [0, 1],   // 横向
-      [1, 0],   // 纵向
-      [1, 1],   // 主对角线
-      [1, -1]   // 副对角线
+      [0, 1],
+      [1, 0],
+      [1, 1],
+      [1, -1]
     ];
 
     let liveThreeCount = 0;
@@ -119,7 +115,6 @@ export function useGobang() {
     return false;
   };
 
-  // 更新禁手位置
   const updateForbiddenMoves = () => {
     if (mode.value !== 'professional' || currentPlayer.value !== 'black') {
       forbiddenMoves.value = [];
@@ -137,7 +132,6 @@ export function useGobang() {
     forbiddenMoves.value = forbidden;
   };
 
-  // 检查是否获胜
   const checkWin = (row: number, col: number): boolean => {
     const player = board.value[row][col];
     if (!player) return false;
@@ -182,21 +176,12 @@ export function useGobang() {
     return false;
   };
 
-  // 落子
   const makeMove = (row: number, col: number): boolean => {
     if (isGameOver.value || board.value[row][col] !== null) {
       return false;
     }
 
-    // **新增：专业模式第一手必须在中心**
-    const centerPos = Math.floor(BOARD_SIZE / 2);
-    if (mode.value === 'professional' && moveHistory.value.length === 0) {
-      if (row !== centerPos || col !== centerPos) {
-        return false; // 第一手不在中心，拒绝落子
-      }
-    }
-
-    // 专业模式：五手两打阶段 - 记录提供的选点
+    // 专业模式：五手两打阶段
     if (mode.value === 'professional' && professionalPhase.value === 'five-offer') {
       if (fiveOffers.value.length < 2) {
         if (isForbiddenMove(row, col)) {
@@ -245,7 +230,8 @@ export function useGobang() {
         return true;
       } else if (moveHistory.value.length === 4 && professionalPhase.value === 'three-swap') {
         professionalPhase.value = 'normal';
-      } else if (moveHistory.value.length === 5 && professionalPhase.value === 'normal') {
+      } else if (moveHistory.value.length === 4 && professionalPhase.value === 'normal') {
+        // 第4手后进入五手两打
         professionalPhase.value = 'five-offer';
         currentPlayer.value = 'black';
         fiveOffers.value = [];
@@ -260,7 +246,6 @@ export function useGobang() {
     return true;
   };
 
-  // 三手交换
   const swapPlayers = () => {
     if (mode.value !== 'professional' || professionalPhase.value !== 'three-swap') {
       return;
@@ -277,7 +262,6 @@ export function useGobang() {
     updateForbiddenMoves();
   };
 
-  // 拒绝三手交换
   const declineSwap = () => {
     if (mode.value !== 'professional' || professionalPhase.value !== 'three-swap') {
       return;
@@ -289,7 +273,6 @@ export function useGobang() {
     updateForbiddenMoves();
   };
 
-  // **修改：五手两打 - 白方选择一个选点（不能交换）**
   const chooseFiveOffer = (offerIndex: number) => {
     if (mode.value !== 'professional' || 
         professionalPhase.value !== 'five-choose' ||
@@ -303,27 +286,20 @@ export function useGobang() {
 
     fiveOffers.value = [];
     
-    // 直接进入正常对弈，白方继续
+    // **修改：白方选择后继续白方回合**
     currentPlayer.value = 'white';
     professionalPhase.value = 'normal';
     
     updateForbiddenMoves();
   };
 
-  // 悔棋
   const undo = () => {
-    if (moveHistory.value.length === 0) return;
-
+    // **专业模式禁止悔棋**
     if (mode.value === 'professional') {
-      if (professionalPhase.value === 'five-offer' && fiveOffers.value.length > 0) {
-        fiveOffers.value.pop();
-        return;
-      }
-      
-      if (professionalPhase.value !== 'normal') {
-        return;
-      }
+      return;
     }
+
+    if (moveHistory.value.length === 0) return;
 
     const lastMovePos = moveHistory.value.pop()!;
     board.value[lastMovePos.row][lastMovePos.col] = null;
@@ -338,13 +314,11 @@ export function useGobang() {
     updateForbiddenMoves();
   };
 
-  // 设置游戏模式
   const setMode = (newMode: GameMode) => {
     mode.value = newMode;
     restart();
   };
 
-  // 重新开始
   const restart = () => {
     board.value = initBoard();
     currentPlayer.value = 'black';
@@ -354,6 +328,15 @@ export function useGobang() {
     professionalPhase.value = 'normal';
     fiveOffers.value = [];
     forbiddenMoves.value = [];
+
+    // **专业模式：自动放置中心棋子**
+    if (mode.value === 'professional') {
+      const centerPos = Math.floor(BOARD_SIZE / 2);
+      board.value[centerPos][centerPos] = 'black';
+      moveHistory.value.push({ row: centerPos, col: centerPos });
+      // 第一手已下，轮到白方
+      currentPlayer.value = 'white';
+    }
   };
 
   const gameState = computed<GameState>(() => ({
