@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import GameBoard from "./components/GameBoard.vue";
-import GameInfo from "./components/GameInfo.vue";
-import GameControl from "./components/GameControl.vue";
-import ProfessionalPanel from "./components/ProfessionalPanel.vue";
-import GameStartScreen from "./components/GameStartScreen.vue";
-import ManaBar from "./components/ManaBar.vue";
-import SkillPanel from "./components/SkillPanel.vue";
-import { useGobang } from "./composables/useGobang";
-import type { GameMode, SkillType } from "./types/game";
+import { ref, computed, watch } from 'vue';
+import GameBoard from './components/GameBoard.vue';
+import GameInfo from './components/GameInfo.vue';
+import GameControl from './components/GameControl.vue';
+import ProfessionalPanel from './components/ProfessionalPanel.vue';
+import GameStartScreen from './components/GameStartScreen.vue';
+import ManaBar from './components/ManaBar.vue';
+import SkillPanel from './components/SkillPanel.vue';
+import { useGobang } from './composables/useGobang';
+import type { GameMode, SkillType } from './types/game';
 
 const {
   board,
@@ -38,9 +38,12 @@ const {
   useSkill,
   executeSkillEffect,
   closeCounterWindow,
+  addManaCheat
 } = useGobang();
 
 const gameStarted = ref(false);
+const titleClickCount = ref(0);
+const showCheatButton = ref(false);
 
 const startGame = (selectedMode: GameMode) => {
   setMode(selectedMode);
@@ -53,31 +56,28 @@ const backToStart = () => {
 };
 
 const canUndo = computed(() => {
-  if (mode.value === "professional") {
+  if (mode.value === 'professional') {
     return false;
   }
   return moveHistory.value.length > 0;
 });
 
 const showDecisionHint = computed(() => {
-  return (
-    mode.value === "professional" &&
-    (professionalPhase.value === "three-swap" ||
-      professionalPhase.value === "five-choose")
-  );
+  return mode.value === 'professional' && 
+         (professionalPhase.value === 'three-swap' || professionalPhase.value === 'five-choose');
 });
 
 const getDecisionHintText = computed(() => {
-  if (professionalPhase.value === "three-swap") {
-    return "白方请在下方操作面板中选择是否交换黑白";
+  if (professionalPhase.value === 'three-swap') {
+    return '白方请在下方操作面板中选择是否交换黑白';
   }
-  if (professionalPhase.value === "five-choose") {
-    return `${hasSwapped.value ? "黑方" : "白方"}请在下方操作面板中选择落子点`;
+  if (professionalPhase.value === 'five-choose') {
+    return `${hasSwapped.value ? '黑方' : '白方'}请在下方操作面板中选择落子点`;
   }
-  return "";
+  return '';
 });
 
-const handleSkillUse = (player: "black" | "white", skillId: SkillType) => {
+const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
   const success = useSkill(player, skillId);
   if (success) {
     console.log(`${player} activated skill: ${skillId}`);
@@ -89,7 +89,30 @@ const handleSkillUse = (player: "black" | "white", skillId: SkillType) => {
 const handleExecuteSkill = (row: number, col: number) => {
   const success = executeSkillEffect(row, col);
   if (!success) {
-    console.log("Invalid skill target");
+    console.log('Invalid skill target');
+  }
+};
+
+const handleTitleClick = () => {
+  titleClickCount.value++;
+  if (titleClickCount.value >= 15) {
+    showCheatButton.value = true;
+  }
+};
+
+const handleCheat = () => {
+  addManaCheat();
+};
+
+const canCounter = computed(() => {
+  if (!counterWindowOpen.value || !counterWindowPlayer.value) return false;
+  const mana = counterWindowPlayer.value === 'black' ? blackMana.value : whiteMana.value;
+  return mana.current >= 13; // 东山再起需要13点法力
+});
+
+const handleCounterSkill = () => {
+  if (counterWindowPlayer.value && canCounter.value) {
+    handleSkillUse(counterWindowPlayer.value, 'comeback');
   }
 };
 
@@ -97,7 +120,7 @@ const handleExecuteSkill = (row: number, col: number) => {
 watch(showDecisionHint, (newValue) => {
   if (newValue) {
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
   }
 });
@@ -109,49 +132,63 @@ watch(counterWindowOpen, (isOpen) => {
       if (counterWindowOpen.value) {
         closeCounterWindow();
       }
-    }, 3000); // 3秒后自动执行
+    }, 3000);  // 3秒后自动执行
   }
 });
 </script>
 
 <template>
-  <GameStartScreen v-if="!gameStarted" @start-game="startGame" />
-
+  <GameStartScreen 
+    v-if="!gameStarted"
+    @start-game="startGame"
+  />
+  
   <div v-else class="app">
-    <header class="header">
+    <header class="header" @click="handleTitleClick">
       <h1>五子棋游戏</h1>
       <p>
         <span v-if="mode === 'basic'">基础模式</span>
-        <span v-else>专业模式（连珠）</span>
+        <span v-else>专业模式(连珠)</span>
       </p>
     </header>
 
     <main class="main">
-      <!-- 反制窗口提示 -->
-      <div v-if="counterWindowOpen" class="counter-window">
+      <!-- 反制窗口提示 - 只在对方视角显示 -->
+      <div v-if="counterWindowOpen && counterWindowPlayer" class="counter-window">
         <div class="counter-content">
           <div class="counter-icon">⚠️</div>
           <div class="counter-text">
-            <h3>力拔山兮即将发动！</h3>
-            <p>
-              {{
-                counterWindowPlayer === "black" ? "黑方" : "白方"
-              }}可以使用"东山再起"反制
-            </p>
-            <p class="counter-timer">3秒后自动执行...</p>
+            <h3>力拔山兮即将发动!</h3>
+            <p>{{ counterWindowPlayer === 'black' ? '黑方' : '白方' }}可以使用"东山再起"反制</p>
+            <p v-if="canCounter" class="counter-timer">还有时间反制...</p>
+            <p v-else class="no-mana-warning">⚠️ 法力值不足，无力反制</p>
           </div>
-          <button class="counter-close-btn" @click="closeCounterWindow">
-            确认不反制
-          </button>
+          <div class="counter-buttons">
+            <button 
+              v-if="canCounter"
+              class="counter-skill-btn" 
+              @click="handleCounterSkill"
+            >
+              <span class="btn-icon">🔄</span>
+              <span>使用东山再起</span>
+              <span class="btn-cost">消耗 13 💎</span>
+            </button>
+            <button 
+              v-else
+              class="counter-close-btn disabled" 
+              disabled
+            >
+              <span class="btn-icon">🔒</span>
+              <span>法力值不足</span>
+            </button>
+          </div>
         </div>
       </div>
-
+      
       <!-- 跳过回合提示 -->
       <div v-if="skipNextTurn" class="skip-turn-hint">
         <span class="skip-icon">💤</span>
-        {{
-          skipNextTurn === "black" ? "黑方" : "白方"
-        }}下一回合将被跳过（静如止水效果）
+        {{ skipNextTurn === 'black' ? '黑方' : '白方' }}下一回合将被跳过(静如止水效果)
       </div>
 
       <div v-if="showDecisionHint" class="top-hint">
@@ -186,15 +223,15 @@ watch(counterWindowOpen, (isOpen) => {
             <span class="player-icon">⚫</span>
             <span>黑方</span>
           </div>
-          <ManaBar
-            :mana="blackMana"
+          <ManaBar 
+            :mana="blackMana" 
             player-side="black"
             :total-moves="moveHistory.length"
           />
-          <SkillPanel
-            :mana="blackMana"
+          <SkillPanel 
+            :mana="blackMana" 
             player-side="black"
-            :disabled="currentPlayer !== 'black' || isGameOver"
+            :disabled="currentPlayer !== 'black' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'black')"
             @use-skill="(skillId) => handleSkillUse('black', skillId)"
           />
         </div>
@@ -250,34 +287,42 @@ watch(counterWindowOpen, (isOpen) => {
             <span class="player-icon">⚪</span>
             <span>白方</span>
           </div>
-          <ManaBar
-            :mana="whiteMana"
+          <ManaBar 
+            :mana="whiteMana" 
             player-side="white"
             :total-moves="moveHistory.length"
           />
-          <SkillPanel
-            :mana="whiteMana"
+          <SkillPanel 
+            :mana="whiteMana" 
             player-side="white"
-            :disabled="currentPlayer !== 'white' || isGameOver"
+            :disabled="currentPlayer !== 'white' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'white')"
             @use-skill="(skillId) => handleSkillUse('white', skillId)"
           />
         </div>
       </div>
 
-      <GameControl :can-undo="canUndo" @undo="undo" @restart="restart" />
+      <GameControl
+        :can-undo="canUndo"
+        @undo="undo"
+        @restart="restart"
+      />
 
-      <div
-        v-if="mode === 'professional' && forbiddenMoves.length > 0"
-        class="hint-box"
-      >
+      <div v-if="showCheatButton" class="cheat-container">
+        <button class="cheat-btn" @click="handleCheat">
+          🎮 作弊: +2法力
+        </button>
+      </div>
+
+      <div v-if="mode === 'professional' && forbiddenMoves.length > 0" class="hint-box">
         <div class="hint-icon">⚠️</div>
         <div class="hint-text">
-          当前棋盘上有
-          <strong>{{ forbiddenMoves.length }}</strong> 个禁手位置（红色✕标记）
+          当前棋盘上有 <strong>{{ forbiddenMoves.length }}</strong> 个禁手位置(红色✕标记)
         </div>
       </div>
 
-      <button class="back-btn" @click="backToStart">← 返回模式选择</button>
+      <button class="back-btn" @click="backToStart">
+        ← 返回模式选择
+      </button>
     </main>
 
     <footer class="footer">
@@ -300,6 +345,8 @@ watch(counterWindowOpen, (isOpen) => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  user-select: none;
 }
 
 .header h1 {
@@ -377,8 +424,7 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 @keyframes pulse {
-  0%,
-  100% {
+  0%, 100% {
     transform: scale(1);
   }
   50% {
@@ -403,8 +449,49 @@ watch(counterWindowOpen, (isOpen) => {
   margin-top: 20px;
 }
 
-.counter-close-btn {
+.no-mana-warning {
+  color: #ffeb3b;
+  font-weight: bold;
+  font-size: 18px;
+  margin-top: 20px;
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.counter-buttons {
   margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.counter-skill-btn {
+  padding: 15px 40px;
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.counter-skill-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+}
+
+.counter-close-btn {
   padding: 15px 40px;
   background: white;
   color: #ff6b6b;
@@ -414,11 +501,26 @@ watch(counterWindowOpen, (isOpen) => {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
 }
 
-.counter-close-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+.counter-close-btn.disabled {
+  background: #9e9e9e;
+  color: #616161;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-icon {
+  font-size: 24px;
+}
+
+.btn-cost {
+  font-size: 12px;
+  opacity: 0.9;
 }
 
 .skip-turn-hint {
@@ -543,6 +645,35 @@ watch(counterWindowOpen, (isOpen) => {
   border: 3px solid #e0e0e0;
 }
 
+.cheat-container {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.cheat-btn {
+  padding: 12px 30px;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: rainbow 3s infinite;
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.cheat-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 12px rgba(255, 152, 0, 0.4);
+}
+
 .hint-box {
   background: linear-gradient(135deg, #fff3e0, #ffebee);
   border: 2px solid #ff9800;
@@ -603,17 +734,17 @@ watch(counterWindowOpen, (isOpen) => {
     flex-direction: column;
     align-items: center;
   }
-
+  
   .side-panel {
     width: 100%;
     max-width: 600px;
   }
-
+  
   .left-panel,
   .right-panel {
     align-items: center;
   }
-
+  
   .dual-board {
     grid-template-columns: 1fr;
   }
@@ -623,7 +754,7 @@ watch(counterWindowOpen, (isOpen) => {
   .header h1 {
     font-size: 28px;
   }
-
+  
   .dual-board {
     gap: 15px;
   }
