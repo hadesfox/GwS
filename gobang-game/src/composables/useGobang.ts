@@ -176,111 +176,130 @@ export function useGobang() {
   };
 
   const makeMove = (row: number, col: number): boolean => {
-    if (isGameOver.value || board.value[row][col] !== null) {
-      return false;
-    }
+  if (isGameOver.value || board.value[row][col] !== null) {
+    return false;
+  }
 
-    // 专业模式：五手两打阶段
-    if (mode.value === 'professional' && professionalPhase.value === 'five-offer') {
-      if (fiveOffers.value.length < 2) {
-        if (isForbiddenMove(row, col)) {
-          return false;
-        }
-        fiveOffers.value.push({ row, col });
-        
-        if (fiveOffers.value.length === 2) {
-          professionalPhase.value = 'five-choose';
-          currentPlayer.value = 'white';
-        }
-        return true;
-      }
-      return false;
-    }
-
-    // 专业模式：检查禁手
-    if (mode.value === 'professional' && currentPlayer.value === 'black') {
+  // 专业模式：五手两打阶段
+  if (mode.value === 'professional' && professionalPhase.value === 'five-offer') {
+    if (fiveOffers.value.length < 2) {
       if (isForbiddenMove(row, col)) {
-        winner.value = 'white';
-        isGameOver.value = true;
         return false;
       }
-    }
-
-    board.value[row][col] = currentPlayer.value;
-    moveHistory.value.push({ row, col });
-
-    if (checkWin(row, col)) {
-      winner.value = currentPlayer.value;
-      isGameOver.value = true;
-      return true;
-    }
-
-    if (moveHistory.value.length === BOARD_SIZE * BOARD_SIZE) {
-      isGameOver.value = true;
-      return true;
-    }
-
-    // 专业模式阶段判断
-    if (mode.value === 'professional') {
-      // 第2手后仍是黑方回合（黑方下白子）
-      if (moveHistory.value.length === 2) {
-        currentPlayer.value = 'black';
-        updateForbiddenMoves();
-        return true;
-      }
-      // 第3手后进入三手交换
-      else if (moveHistory.value.length === 3) {
-        professionalPhase.value = 'three-swap';
+      fiveOffers.value.push({ row, col });
+      
+      if (fiveOffers.value.length === 2) {
+        professionalPhase.value = 'five-choose';
         currentPlayer.value = 'white';
-        updateForbiddenMoves();
-        return true;
       }
-      // 三手交换后的第一手
-      else if (moveHistory.value.length === 4 && professionalPhase.value === 'three-swap') {
-        professionalPhase.value = 'normal';
-      }
-      // 第4手后进入五手两打
-      else if (moveHistory.value.length === 4 && professionalPhase.value === 'normal') {
-        professionalPhase.value = 'five-offer';
-        currentPlayer.value = 'black';
-        fiveOffers.value = [];
-        updateForbiddenMoves();
-        return true;
-      }
+      return true;
     }
+    return false;
+  }
 
-    currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
-    updateForbiddenMoves();
-    
+  // 专业模式：检查禁手
+  if (mode.value === 'professional' && currentPlayer.value === 'black') {
+    if (isForbiddenMove(row, col)) {
+      winner.value = 'white';
+      isGameOver.value = true;
+      return false;
+    }
+  }
+
+  // **修改：第2手特殊处理 - 黑方下白子**
+  if (mode.value === 'professional' && moveHistory.value.length === 1) {
+    board.value[row][col] = 'white';  // 强制放白子
+  } else {
+    board.value[row][col] = currentPlayer.value;
+  }
+  
+  moveHistory.value.push({ row, col });
+
+  if (checkWin(row, col)) {
+    winner.value = currentPlayer.value;
+    isGameOver.value = true;
     return true;
-  };
+  }
 
-  const swapPlayers = () => {
-    if (mode.value !== 'professional' || professionalPhase.value !== 'three-swap') {
-      return;
+  if (moveHistory.value.length === BOARD_SIZE * BOARD_SIZE) {
+    isGameOver.value = true;
+    return true;
+  }
+
+
+  // 专业模式阶段判断
+  if (mode.value === 'professional') {
+    // 第2手后仍是黑方回合（准备下第3手黑子）
+    if (moveHistory.value.length === 2) {
+      currentPlayer.value = 'black';
+      updateForbiddenMoves();
+      return true;
     }
-
-    for (const pos of moveHistory.value) {
-      const currentColor = board.value[pos.row][pos.col];
-      board.value[pos.row][pos.col] = currentColor === 'black' ? 'white' : 'black';
+    // 第3手后进入三手交换
+    else if (moveHistory.value.length === 3) {
+      professionalPhase.value = 'three-swap';
+      currentPlayer.value = 'white';  // 白方决定是否交换
+      updateForbiddenMoves();
+      return true;
     }
-
-    currentPlayer.value = 'black';
-    professionalPhase.value = 'normal';
-    
-    updateForbiddenMoves();
-  };
-
-  const declineSwap = () => {
-    if (mode.value !== 'professional' || professionalPhase.value !== 'three-swap') {
-      return;
+    // 三手交换决定后
+    else if (moveHistory.value.length === 4 && professionalPhase.value === 'three-swap') {
+      professionalPhase.value = 'normal';
     }
+    // 第4手后进入五手两打
+    else if (moveHistory.value.length === 4 && professionalPhase.value === 'normal') {
+      professionalPhase.value = 'five-offer';
+      currentPlayer.value = 'black';
+      fiveOffers.value = [];
+      updateForbiddenMoves();
+      return true;
+    }
+  }
 
-    currentPlayer.value = 'black';
-    professionalPhase.value = 'normal';
-    
-    updateForbiddenMoves();
-  };
+  currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
+  updateForbiddenMoves();
+  
+  return true;
+};
+
+// **修改：三手交换 - 交换后黑方继续**
+const swapPlayers = () => {
+  if (mode.value !== 'professional' || professionalPhase.value !== 'three-swap') {
+    return;
+  }
+
+  // 交换所有已下的棋子颜色
+  for (const pos of moveHistory.value) {
+    const currentColor = board.value[pos.row][pos.col];
+    board.value[pos.row][pos.col] = currentColor === 'black' ? 'white' : 'black';
+  }
+
+  // 交换后，原白方变成黑方，黑方继续
+  currentPlayer.value = 'black';
+  professionalPhase.value = 'normal';
+  
+  updateForbiddenMoves();
+};
+
+// **修改：不交换 - 白方继续**
+/**
+ * 处理拒绝交换的函数
+ * 当玩家选择不进行交换时调用此函数
+ * 仅在专业模式下且处于交换阶段时有效
+ */
+const declineSwap = () => {
+  // 检查当前是否为专业模式且处于交换阶段
+  // 如果不是，则直接返回，不执行任何操作
+  if (mode.value !== 'professional' || professionalPhase.value !== 'three-swap') {
+    return;
+  }
+
+  // 不交换，白方继续落子
+  currentPlayer.value = 'white';
+  professionalPhase.value = 'normal';
+  
+  updateForbiddenMoves();
+};
 
   const chooseFiveOffer = (offerIndex: number) => {
     if (mode.value !== 'professional' || 
