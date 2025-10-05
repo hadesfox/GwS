@@ -13,6 +13,7 @@ interface Props {
   playerSide: 'black' | 'white';
   professionalPhase?: ProfessionalPhase;
   moveCount: number;
+  hasSwapped?: boolean; // 新增
 }
 
 interface Emits {
@@ -24,7 +25,8 @@ const props = withDefaults(defineProps<Props>(), {
   lastMove: null,
   forbiddenMoves: () => [],
   fiveOffers: () => [],
-  professionalPhase: 'normal'
+  professionalPhase: 'normal',
+  hasSwapped: false
 });
 
 const emit = defineEmits<Emits>();
@@ -40,9 +42,15 @@ const cellSize = computed(() => {
 const canMove = computed(() => {
   if (props.isGameOver) return false;
   
-  // 五手两打选择阶段，白方不能点击棋盘
-  if (props.professionalPhase === 'five-choose' && props.playerSide === 'white') {
-    return false;
+  // **新增：五手两打选择阶段的锁定逻辑**
+  if (props.professionalPhase === 'five-choose') {
+    if (props.hasSwapped) {
+      // 交换后：黑方选择，黑方棋盘锁定
+      if (props.playerSide === 'black') return false;
+    } else {
+      // 未交换：白方选择，白方棋盘锁定
+      if (props.playerSide === 'white') return false;
+    }
   }
   
   // 第2手时黑方下白子

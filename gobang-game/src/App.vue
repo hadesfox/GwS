@@ -19,7 +19,7 @@ const {
   professionalPhase,
   fiveOffers,
   forbiddenMoves,
-  hasSwapped, // 新增
+  hasSwapped,
   makeMove,
   undo,
   restart,
@@ -70,7 +70,7 @@ const showFiveChooseHint = computed(() => {
 
     <main class="main">
       <div v-if="showFiveChooseHint" class="top-hint">
-        白方请在下方操作面板中选择黑方提供的落子点
+        {{ hasSwapped ? '黑方' : '白方' }}请在下方操作面板中选择落子点
       </div>
 
       <GameInfo
@@ -83,15 +83,15 @@ const showFiveChooseHint = computed(() => {
       />
 
       <ProfessionalPanel
-    v-if="mode === 'professional'"
-    :phase="professionalPhase"
-    :move-count="moveHistory.length"
-    :five-offers="fiveOffers"
-    :has-swapped="hasSwapped"
-    @swap-players="swapPlayers"
-    @decline-swap="declineSwap"
-    @choose-five-offer="chooseFiveOffer"
-  />
+        v-if="mode === 'professional'"
+        :phase="professionalPhase"
+        :move-count="moveHistory.length"
+        :five-offers="fiveOffers"
+        :has-swapped="hasSwapped"
+        @swap-players="swapPlayers"
+        @decline-swap="declineSwap"
+        @choose-five-offer="chooseFiveOffer"
+      />
 
       <div class="dual-board-container">
         <div class="player-section black-section">
@@ -109,6 +109,7 @@ const showFiveChooseHint = computed(() => {
             :player-side="'black'"
             :professional-phase="professionalPhase"
             :move-count="moveHistory.length"
+            :has-swapped="hasSwapped"
             @make-move="makeMove"
           />
         </div>
@@ -128,6 +129,7 @@ const showFiveChooseHint = computed(() => {
             :player-side="'white'"
             :professional-phase="professionalPhase"
             :move-count="moveHistory.length"
+            :has-swapped="hasSwapped"
             @make-move="makeMove"
           />
         </div>
