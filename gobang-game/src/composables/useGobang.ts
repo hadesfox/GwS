@@ -46,103 +46,98 @@ export function useGobang() {
       : null;
   });
 
-  // 更新法力值
-  const updateMana = (player: 'black' | 'white') => {
-    const mana = player === 'black' ? blackMana : whiteMana;
-    
-    mana.value.moveCounter++;
-    
-    if (mana.value.moveCounter >= MOVES_PER_MANA) {
-      mana.value.moveCounter = 0;
-      if (mana.value.current < mana.value.max) {
-        mana.value.current++;
-      }
+  // 更新法力值 - 确保只更新当前玩家的法力值
+const updateMana = (player: 'black' | 'white') => {
+  const mana = player === 'black' ? blackMana : whiteMana;
+  
+  mana.value.moveCounter++;
+  
+  if (mana.value.moveCounter >= MOVES_PER_MANA) {
+    mana.value.moveCounter = 0;
+    if (mana.value.current < mana.value.max) {
+      mana.value.current++;
     }
-  };
+  }
+};
 
   // 使用技能
   const useSkill = (player: 'black' | 'white', skillId: SkillType): boolean => {
-    const mana = player === 'black' ? blackMana : whiteMana;
-    const skill = SKILLS.find(s => s.id === skillId);
+  // 修复：直接使用 ref，而不是获取 value
+  const mana = player === 'black' ? blackMana : whiteMana;
+  const skill = SKILLS.find(s => s.id === skillId);
+  
+  if (!skill) return false;
+  
+  // 检查法力值是否足够
+  if (mana.value.current < skill.manaCost) {
+    return false;
+  }
+  
+  // 根据技能类型执行不同的效果
+  switch (skillId) {
+    case 'fly-sand':
+      skillState.value = {
+        isSelecting: true,
+        skillType: 'fly-sand',
+        player: player
+      };
+      return true;
     
-    if (!skill) return false;
-    
-    // 检查法力值是否足够
-    if (mana.value.current < skill.manaCost) {
+    default:
+      console.log(`Skill ${skillId} not implemented yet`);
       return false;
-    }
-    
-    // 根据技能类型执行不同的效果
-    switch (skillId) {
-      case 'fly-sand':
-        // 飞沙走石：进入选择模式，让玩家选择要移除的棋子
-        skillState.value = {
-          isSelecting: true,
-          skillType: 'fly-sand',
-          player: player
-        };
-        return true;
-      
-      default:
-        console.log(`Skill ${skillId} not implemented yet`);
-        return false;
-    }
-  };
+  }
+};
 
   // 执行技能效果
   const executeSkillEffect = (row: number, col: number): boolean => {
-    if (!skillState.value.isSelecting || !skillState.value.skillType) {
-      return false;
-    }
-    
-    const player = skillState.value.player!;
-    const skillType = skillState.value.skillType;
-    const mana = player === 'black' ? blackMana : whiteMana;
-    const skill = SKILLS.find(s => s.id === skillType);
-    
-    if (!skill) return false;
-    
-    switch (skillType) {
-      case 'fly-sand': {
-        // 飞沙走石：移除指定位置的棋子
-        if (board.value[row][col] === null) {
-          // 该位置没有棋子，无效操作
-          return false;
-        }
-        
-        // 移除棋子
-        board.value[row][col] = null;
-        
-        // 从移动历史中移除该位置（如果存在）
-        const moveIndex = moveHistory.value.findIndex(
-          move => move.row === row && move.col === col
-        );
-        if (moveIndex !== -1) {
-          moveHistory.value.splice(moveIndex, 1);
-        }
-        
-        // 消耗法力值
-        mana.value.current -= skill.manaCost;
-        
-        // 重置技能状态
-        skillState.value = {
-          isSelecting: false,
-          skillType: null,
-          player: null
-        };
-        
-        // 更新禁手位置（如果是专业模式）
-        if (mode.value === 'professional') {
-          updateForbiddenMoves();
-        }
-        
-        return true;
+  if (!skillState.value.isSelecting || !skillState.value.skillType) {
+    return false;
+  }
+  
+  const player = skillState.value.player!;
+  const skillType = skillState.value.skillType;
+  // 修复：直接使用 ref
+  const mana = player === 'black' ? blackMana : whiteMana;
+  const skill = SKILLS.find(s => s.id === skillType);
+  
+  if (!skill) return false;
+  
+  switch (skillType) {
+    case 'fly-sand': {
+      if (board.value[row][col] === null) {
+        return false;
       }
       
-      default:
-        return false;
+      board.value[row][col] = null;
+      
+      const moveIndex = moveHistory.value.findIndex(
+        move => move.row === row && move.col === col
+      );
+      if (moveIndex !== -1) {
+        moveHistory.value.splice(moveIndex, 1);
+      }
+      
+      // 消耗法力值
+      mana.value.current -= skill.manaCost;
+      
+      skillState.value = {
+        isSelecting: false,
+        skillType: null,
+        player: null
+      };
+      
+      if (mode.value === 'professional') {
+        updateForbiddenMoves();
+      }
+      
+      return true;
     }
-  };
+    
+    default:
+      return false;
+  }
+};
 
   // 取消技能选择
   const cancelSkillSelection = () => {

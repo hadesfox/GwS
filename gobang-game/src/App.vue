@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import GameBoard from './components/GameBoard.vue';
 import GameInfo from './components/GameInfo.vue';
 import GameControl from './components/GameControl.vue';
@@ -33,8 +33,7 @@ const {
   declineSwap,
   chooseFiveOffer,
   useSkill,
-  executeSkillEffect,
-  cancelSkillSelection
+  executeSkillEffect
 } = useGobang();
 
 const gameStarted = ref(false);
@@ -86,6 +85,15 @@ const handleExecuteSkill = (row: number, col: number) => {
     console.log('Invalid skill target');
   }
 };
+
+// 当进入决策阶段时，滚动到页面顶部
+watch(showDecisionHint, (newValue) => {
+  if (newValue) {
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  }
+});
 </script>
 
 <template>
@@ -128,72 +136,80 @@ const handleExecuteSkill = (row: number, col: number) => {
         @choose-five-offer="chooseFiveOffer"
       />
 
-      <div class="dual-board-container">
-        <!-- 黑方区域 -->
-        <div class="player-section black-section">
-          <div class="player-label">
+      <!-- 新布局：技能面板在两侧 -->
+      <div class="game-container">
+        <!-- 黑方技能区域 -->
+        <div class="side-panel left-panel">
+          <div class="player-label black-label">
             <span class="player-icon">⚫</span>
             <span>黑方</span>
           </div>
-          
           <ManaBar :mana="blackMana" player-side="black" />
-          
           <SkillPanel 
             :mana="blackMana" 
             player-side="black"
             :disabled="currentPlayer !== 'black' || isGameOver"
             @use-skill="(skillId) => handleSkillUse('black', skillId)"
           />
-          
-          <GameBoard
-            :board="board"
-            :is-game-over="isGameOver"
-            :last-move="lastMove"
-            :forbidden-moves="forbiddenMoves"
-            :five-offers="fiveOffers"
-            :current-player="currentPlayer"
-            :player-side="'black'"
-            :professional-phase="professionalPhase"
-            :move-count="moveHistory.length"
-            :has-swapped="hasSwapped"
-            :mode="mode"
-            :skill-state="skillState"
-            @make-move="makeMove"
-            @execute-skill="handleExecuteSkill"
-          />
         </div>
 
-        <!-- 白方区域 -->
-        <div class="player-section white-section">
-          <div class="player-label">
+        <!-- 棋盘区域 -->
+        <div class="board-container">
+          <div class="dual-board">
+            <!-- 黑方棋盘 -->
+            <div class="board-wrapper black-board">
+              <GameBoard
+                :board="board"
+                :is-game-over="isGameOver"
+                :last-move="lastMove"
+                :forbidden-moves="forbiddenMoves"
+                :five-offers="fiveOffers"
+                :current-player="currentPlayer"
+                :player-side="'black'"
+                :professional-phase="professionalPhase"
+                :move-count="moveHistory.length"
+                :has-swapped="hasSwapped"
+                :mode="mode"
+                :skill-state="skillState"
+                @make-move="makeMove"
+                @execute-skill="handleExecuteSkill"
+              />
+            </div>
+
+            <!-- 白方棋盘 -->
+            <div class="board-wrapper white-board">
+              <GameBoard
+                :board="board"
+                :is-game-over="isGameOver"
+                :last-move="lastMove"
+                :forbidden-moves="forbiddenMoves"
+                :five-offers="fiveOffers"
+                :current-player="currentPlayer"
+                :player-side="'white'"
+                :professional-phase="professionalPhase"
+                :move-count="moveHistory.length"
+                :has-swapped="hasSwapped"
+                :mode="mode"
+                :skill-state="skillState"
+                @make-move="makeMove"
+                @execute-skill="handleExecuteSkill"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 白方技能区域 -->
+        <div class="side-panel right-panel">
+          <div class="player-label white-label">
             <span class="player-icon">⚪</span>
             <span>白方</span>
           </div>
-          
           <ManaBar :mana="whiteMana" player-side="white" />
-          
           <SkillPanel 
             :mana="whiteMana" 
             player-side="white"
             :disabled="currentPlayer !== 'white' || isGameOver"
             @use-skill="(skillId) => handleSkillUse('white', skillId)"
-          />
-          
-          <GameBoard
-            :board="board"
-            :is-game-over="isGameOver"
-            :last-move="lastMove"
-            :forbidden-moves="forbiddenMoves"
-            :five-offers="fiveOffers"
-            :current-player="currentPlayer"
-            :player-side="'white'"
-            :professional-phase="professionalPhase"
-            :move-count="moveHistory.length"
-            :has-swapped="hasSwapped"
-            :mode="mode"
-            :skill-state="skillState"
-            @make-move="makeMove"
-            @execute-skill="handleExecuteSkill"
           />
         </div>
       </div>
@@ -256,7 +272,7 @@ const handleExecuteSkill = (row: number, col: number) => {
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   width: 100%;
 }
@@ -285,45 +301,81 @@ const handleExecuteSkill = (row: number, col: number) => {
   }
 }
 
-.dual-board-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
+.game-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
   width: 100%;
   margin: 20px 0;
 }
 
-.player-section {
-  background: white;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.side-panel {
+  flex: 0 0 250px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
 }
 
-.black-section {
-  border: 3px solid #333;
+.left-panel {
+  align-items: flex-end;
 }
 
-.white-section {
-  border: 3px solid #e0e0e0;
+.right-panel {
+  align-items: flex-start;
 }
 
 .player-label {
   text-align: center;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
-  margin-bottom: 15px;
+  padding: 12px 20px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.black-label {
+  background: linear-gradient(135deg, #333, #555);
+  color: white;
+}
+
+.white-label {
+  background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+  color: #333;
 }
 
 .player-icon {
-  font-size: 32px;
+  font-size: 28px;
+}
+
+.board-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.dual-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.board-wrapper {
+  background: white;
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.black-board {
+  border: 3px solid #333;
+}
+
+.white-board {
+  border: 3px solid #e0e0e0;
 }
 
 .hint-box {
@@ -381,8 +433,23 @@ const handleExecuteSkill = (row: number, col: number) => {
   border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-@media (max-width: 1200px) {
-  .dual-board-container {
+@media (max-width: 1400px) {
+  .game-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .side-panel {
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  .left-panel,
+  .right-panel {
+    align-items: center;
+  }
+  
+  .dual-board {
     grid-template-columns: 1fr;
   }
 }
@@ -390,6 +457,10 @@ const handleExecuteSkill = (row: number, col: number) => {
 @media (max-width: 768px) {
   .header h1 {
     font-size: 28px;
+  }
+  
+  .dual-board {
+    gap: 15px;
   }
 }
 </style>

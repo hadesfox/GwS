@@ -67,8 +67,8 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
   background: linear-gradient(135deg, #2a2a3e, #1e1e2e);
   border-radius: 12px;
   padding: 15px;
-  margin: 10px 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  width: 100%;
 }
 
 .skill-panel-black {
@@ -101,9 +101,9 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
 }
 
 .skill-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .skill-btn {
@@ -111,19 +111,19 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
   background: linear-gradient(135deg, #3a3a4e, #2a2a3e);
   border: 2px solid #444;
   border-radius: 10px;
-  padding: 12px 8px;
+  padding: 10px;
   cursor: pointer;
   transition: all 0.3s;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 40px 1fr 50px;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   overflow: hidden;
 }
 
 .skill-btn:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .skill-available {
@@ -133,7 +133,7 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
 
 .skill-available:hover {
   border-color: #00f4ff;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
 }
 
 .skill-locked {
@@ -143,28 +143,24 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
 
 .skill-icon-large {
   font-size: 32px;
-  margin-bottom: 4px;
+  text-align: center;
 }
 
 .skill-name {
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: bold;
-  text-align: center;
-  line-height: 1.2;
-  min-height: 28px;
-  display: flex;
-  align-items: center;
+  text-align: left;
 }
 
 .skill-cost {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   color: #00d4ff;
   font-weight: bold;
   font-size: 13px;
-  margin-top: 4px;
 }
 
 .cost-icon {
@@ -186,19 +182,5 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
 
 .lock-icon {
   font-size: 24px;
-}
-
-@media (max-width: 768px) {
-  .skill-grid {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  }
-  
-  .skill-name {
-    font-size: 10px;
-  }
-  
-  .skill-icon-large {
-    font-size: 24px;
-  }
 }
 </style>
