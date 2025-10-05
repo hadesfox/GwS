@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
-import type { Player } from '../types/game';
+import type { Player, Position } from '../types/game';
 import { BOARD_SIZE } from '../types/game';
 
 interface Props {
   board: Player[][];
   isGameOver: boolean;
-  lastMove?: { row: number; col: number } | null;
+  lastMove?: Position | null;
+  forbiddenMoves?: Position[];
+  fiveOffers?: Position[];
 }
 
 interface Emits {
@@ -15,7 +17,9 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   isGameOver: false,
-  lastMove: null
+  lastMove: null,
+  forbiddenMoves: () => [],
+  fiveOffers: () => []
 });
 
 const emit = defineEmits<Emits>();
@@ -34,6 +38,14 @@ const handleClick = (row: number, col: number) => {
 
 const isLastMove = (row: number, col: number) => {
   return props.lastMove?.row === row && props.lastMove?.col === col;
+};
+
+const isForbidden = (row: number, col: number) => {
+  return props.forbiddenMoves?.some(pos => pos.row === row && pos.col === col) || false;
+};
+
+const isFiveOffer = (row: number, col: number) => {
+  return props.fiveOffers?.some(pos => pos.row === row && pos.col === col) || false;
 };
 
 const updateWindowWidth = () => {
@@ -63,10 +75,25 @@ onUnmounted(() => {
           v-for="(cell, colIndex) in row"
           :key="`cell-${rowIndex}-${colIndex}`"
           class="cell"
-          :class="{ 'game-over': isGameOver }"
+          :class="{ 
+            'game-over': isGameOver,
+            'forbidden': !cell && isForbidden(rowIndex, colIndex),
+            'five-offer': isFiveOffer(rowIndex, colIndex)
+          }"
           :style="{ width: `${cellSize}px`, height: `${cellSize}px` }"
           @click="handleClick(rowIndex, colIndex)"
         >
+          <!-- 禁手标记 -->
+          <div v-if="!cell && isForbidden(rowIndex, colIndex)" class="forbidden-mark">
+            ✕
+          </div>
+          
+          <!-- 五手两打候选标记 -->
+          <div v-if="isFiveOffer(rowIndex, colIndex)" class="offer-mark">
+            {{ fiveOffers?.findIndex(pos => pos.row === rowIndex && pos.col === colIndex) + 1 }}
+          </div>
+          
+          <!-- 棋子 -->
           <div 
             v-if="cell" 
             class="piece"
@@ -105,12 +132,45 @@ onUnmounted(() => {
   transition: background-color 0.2s;
 }
 
-.cell:not(.game-over):hover {
+.cell:not(.game-over):not(.forbidden):hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
 .cell.game-over {
   cursor: not-allowed;
+}
+
+.cell.forbidden {
+  background-color: rgba(255, 0, 0, 0.1);
+  cursor: not-allowed;
+}
+
+.cell.five-offer {
+  background-color: rgba(0, 255, 0, 0.2);
+}
+
+.forbidden-mark {
+  color: #d32f2f;
+  font-size: 20px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.offer-mark {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #4caf50;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
 }
 
 .piece {
