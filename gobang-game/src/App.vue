@@ -19,6 +19,7 @@ const {
   professionalPhase,
   fiveOffers,
   forbiddenMoves,
+  hasSwapped, // 新增
   makeMove,
   undo,
   restart,
@@ -82,14 +83,15 @@ const showFiveChooseHint = computed(() => {
       />
 
       <ProfessionalPanel
-        v-if="mode === 'professional'"
-        :phase="professionalPhase"
-        :move-count="moveHistory.length"
-        :five-offers="fiveOffers"
-        @swap-players="swapPlayers"
-        @decline-swap="declineSwap"
-        @choose-five-offer="chooseFiveOffer"
-      />
+    v-if="mode === 'professional'"
+    :phase="professionalPhase"
+    :move-count="moveHistory.length"
+    :five-offers="fiveOffers"
+    :has-swapped="hasSwapped"
+    @swap-players="swapPlayers"
+    @decline-swap="declineSwap"
+    @choose-five-offer="chooseFiveOffer"
+  />
 
       <div class="dual-board-container">
         <div class="player-section black-section">

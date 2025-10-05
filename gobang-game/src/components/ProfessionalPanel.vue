@@ -5,6 +5,7 @@ interface Props {
   phase: ProfessionalPhase;
   moveCount: number;
   fiveOffers?: Position[];
+  hasSwapped?: boolean; // 新增
 }
 
 interface Emits {
@@ -15,6 +16,19 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+// **新增：根据交换状态显示提示文本**
+const getFiveOfferText = () => {
+  return props.hasSwapped 
+    ? '白方需要在棋盘上点击提供两个第5手的候选位置'
+    : '黑方需要在棋盘上点击提供两个第5手的候选位置';
+};
+
+const getFiveChooseText = () => {
+  return props.hasSwapped
+    ? '黑方需要从白方提供的两个选点中选择一个作为第5手（白子）'
+    : '白方需要从黑方提供的两个选点中选择一个作为第5手（黑子）';
+};
 </script>
 
 <template>
@@ -52,7 +66,7 @@ const emit = defineEmits<Emits>();
         五手两打 - 提供选点
       </div>
       <div class="phase-desc">
-        黑方需要在棋盘上点击提供两个第5手的候选位置
+        {{ getFiveOfferText() }}
       </div>
       <div class="phase-info">
         <strong>已提供：</strong>{{ fiveOffers?.length || 0 }} / 2 个选点
@@ -64,12 +78,12 @@ const emit = defineEmits<Emits>();
       </div>
     </div>
 
-    <!-- 五手两打 - 选择阶段（精简版，不遮挡棋盘） -->
+    <!-- 五手两打 - 选择阶段 -->
     <div v-if="phase === 'five-choose'" class="phase-panel five-choose compact">
       <div class="compact-content">
         <div class="compact-title">
           <span class="phase-icon">🎯</span>
-          <span>五手两打 - 白方选择落子点</span>
+          <span>五手两打 - {{ hasSwapped ? '黑方' : '白方' }}选择落子点</span>
         </div>
         <div class="compact-actions">
           <button 
