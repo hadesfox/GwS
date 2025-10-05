@@ -5,8 +5,10 @@ import GameInfo from './components/GameInfo.vue';
 import GameControl from './components/GameControl.vue';
 import ProfessionalPanel from './components/ProfessionalPanel.vue';
 import GameStartScreen from './components/GameStartScreen.vue';
+import ManaBar from './components/ManaBar.vue';  // **新增**
+import SkillPanel from './components/SkillPanel.vue';  // **新增**
 import { useGobang } from './composables/useGobang';
-import type { GameMode } from './types/game';
+import type { GameMode, SkillType } from '../types/game';
 
 const {
   board,
@@ -20,13 +22,16 @@ const {
   fiveOffers,
   forbiddenMoves,
   hasSwapped,
+  blackMana,  // **新增**
+  whiteMana,  // **新增**
   makeMove,
   undo,
   restart,
   setMode,
   swapPlayers,
   declineSwap,
-  chooseFiveOffer
+  chooseFiveOffer,
+  useSkill  // **新增**
 } = useGobang();
 
 const gameStarted = ref(false);
@@ -48,7 +53,6 @@ const canUndo = computed(() => {
   return moveHistory.value.length > 0;
 });
 
-// **修改：增加三手交换提示**
 const showDecisionHint = computed(() => {
   return mode.value === 'professional' && 
          (professionalPhase.value === 'three-swap' || professionalPhase.value === 'five-choose');
@@ -63,6 +67,13 @@ const getDecisionHintText = computed(() => {
   }
   return '';
 });
+
+// **新增：处理技能使用**
+const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
+  useSkill(player, skillId);
+  // TODO: 显示技能使用提示
+  console.log(`${player} used skill: ${skillId}`);
+};
 </script>
 
 <template>
@@ -106,11 +117,24 @@ const getDecisionHintText = computed(() => {
       />
 
       <div class="dual-board-container">
+        <!-- 黑方区域 -->
         <div class="player-section black-section">
           <div class="player-label">
             <span class="player-icon">⚫</span>
             <span>黑方</span>
           </div>
+          
+          <!-- **新增：法力值条** -->
+          <ManaBar :mana="blackMana" player-side="black" />
+          
+          <!-- **新增：技能面板** -->
+          <SkillPanel 
+            :mana="blackMana" 
+            player-side="black"
+            :disabled="currentPlayer !== 'black' || isGameOver"
+            @use-skill="(skillId) => handleSkillUse('black', skillId)"
+          />
+          
           <GameBoard
             :board="board"
             :is-game-over="isGameOver"
@@ -126,11 +150,24 @@ const getDecisionHintText = computed(() => {
           />
         </div>
 
+        <!-- 白方区域 -->
         <div class="player-section white-section">
           <div class="player-label">
             <span class="player-icon">⚪</span>
             <span>白方</span>
           </div>
+          
+          <!-- **新增：法力值条** -->
+          <ManaBar :mana="whiteMana" player-side="white" />
+          
+          <!-- **新增：技能面板** -->
+          <SkillPanel 
+            :mana="whiteMana" 
+            player-side="white"
+            :disabled="currentPlayer !== 'white' || isGameOver"
+            @use-skill="(skillId) => handleSkillUse('white', skillId)"
+          />
+          
           <GameBoard
             :board="board"
             :is-game-over="isGameOver"
@@ -247,6 +284,9 @@ const getDecisionHintText = computed(() => {
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .black-section {
