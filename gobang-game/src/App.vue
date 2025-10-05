@@ -48,8 +48,20 @@ const canUndo = computed(() => {
   return moveHistory.value.length > 0;
 });
 
-const showFiveChooseHint = computed(() => {
-  return mode.value === 'professional' && professionalPhase.value === 'five-choose';
+// **修改：增加三手交换提示**
+const showDecisionHint = computed(() => {
+  return mode.value === 'professional' && 
+         (professionalPhase.value === 'three-swap' || professionalPhase.value === 'five-choose');
+});
+
+const getDecisionHintText = computed(() => {
+  if (professionalPhase.value === 'three-swap') {
+    return '白方请在下方操作面板中选择是否交换黑白';
+  }
+  if (professionalPhase.value === 'five-choose') {
+    return `${hasSwapped.value ? '黑方' : '白方'}请在下方操作面板中选择落子点`;
+  }
+  return '';
 });
 </script>
 
@@ -69,8 +81,8 @@ const showFiveChooseHint = computed(() => {
     </header>
 
     <main class="main">
-      <div v-if="showFiveChooseHint" class="top-hint">
-        {{ hasSwapped ? '黑方' : '白方' }}请在下方操作面板中选择落子点
+      <div v-if="showDecisionHint" class="top-hint">
+        {{ getDecisionHintText }}
       </div>
 
       <GameInfo

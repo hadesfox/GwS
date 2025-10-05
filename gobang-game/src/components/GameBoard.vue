@@ -13,7 +13,7 @@ interface Props {
   playerSide: 'black' | 'white';
   professionalPhase?: ProfessionalPhase;
   moveCount: number;
-  hasSwapped?: boolean; // 新增
+  hasSwapped?: boolean;
 }
 
 interface Emits {
@@ -42,7 +42,12 @@ const cellSize = computed(() => {
 const canMove = computed(() => {
   if (props.isGameOver) return false;
   
-  // **新增：五手两打选择阶段的锁定逻辑**
+  // **新增：三手交换阶段锁定棋盘**
+  if (props.professionalPhase === 'three-swap') {
+    return false; // 三手交换时完全锁定棋盘
+  }
+  
+  // 五手两打选择阶段的锁定逻辑
   if (props.professionalPhase === 'five-choose') {
     if (props.hasSwapped) {
       // 交换后：黑方选择，黑方棋盘锁定
