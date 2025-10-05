@@ -41,11 +41,14 @@ const backToStart = () => {
 };
 
 const canUndo = computed(() => {
-  // 专业模式禁止悔棋
   if (mode.value === 'professional') {
     return false;
   }
   return moveHistory.value.length > 0;
+});
+
+const showFiveChooseHint = computed(() => {
+  return mode.value === 'professional' && professionalPhase.value === 'five-choose';
 });
 </script>
 
@@ -57,7 +60,7 @@ const canUndo = computed(() => {
   
   <div v-else class="app">
     <header class="header">
-      <h1>🎮 五子棋游戏</h1>
+      <h1>五子棋游戏</h1>
       <p>
         <span v-if="mode === 'basic'">基础模式</span>
         <span v-else>专业模式（连珠）</span>
@@ -65,6 +68,10 @@ const canUndo = computed(() => {
     </header>
 
     <main class="main">
+      <div v-if="showFiveChooseHint" class="top-hint">
+        白方请在下方操作面板中选择黑方提供的落子点
+      </div>
+
       <GameInfo
         :current-player="currentPlayer"
         :winner="winner"
@@ -84,7 +91,6 @@ const canUndo = computed(() => {
         @choose-five-offer="chooseFiveOffer"
       />
 
-      <!-- 双画面布局 -->
       <div class="dual-board-container">
         <div class="player-section black-section">
           <div class="player-label">
@@ -99,6 +105,8 @@ const canUndo = computed(() => {
             :five-offers="fiveOffers"
             :current-player="currentPlayer"
             :player-side="'black'"
+            :professional-phase="professionalPhase"
+            :move-count="moveHistory.length"
             @make-move="makeMove"
           />
         </div>
@@ -116,6 +124,8 @@ const canUndo = computed(() => {
             :five-offers="fiveOffers"
             :current-player="currentPlayer"
             :player-side="'white'"
+            :professional-phase="professionalPhase"
+            :move-count="moveHistory.length"
             @make-move="makeMove"
           />
         </div>
@@ -182,6 +192,30 @@ const canUndo = computed(() => {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+}
+
+.top-hint {
+  background: linear-gradient(135deg, #2196f3, #21cbf3);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  margin-bottom: 20px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dual-board-container {

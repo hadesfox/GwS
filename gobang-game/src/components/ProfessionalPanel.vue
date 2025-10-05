@@ -64,31 +64,23 @@ const emit = defineEmits<Emits>();
       </div>
     </div>
 
-    <!-- 五手两打 - 选择阶段（修改：去掉交换选项） -->
-    <div v-if="phase === 'five-choose'" class="phase-panel five-choose">
-      <div class="phase-title">
-        <span class="phase-icon">🎯</span>
-        五手两打 - 选择落子点
-      </div>
-      <div class="phase-desc">
-        白方需要从黑方提供的两个选点中选择一个作为第5手（黑子）
-      </div>
-      <div class="offers-grid">
-        <div v-for="(offer, index) in fiveOffers" :key="index" class="offer-option">
-          <div class="offer-label">选点 {{ index + 1 }}</div>
-          <div class="offer-position">
-            位置: ({{ offer.row + 1 }}, {{ offer.col + 1 }})
-          </div>
-          <div class="offer-actions">
-            <button 
-              class="action-btn choose-btn-full"
-              @click="emit('chooseFiveOffer', index)"
-            >
-              <span class="btn-icon">✓</span>
-              <span>选择此点</span>
-              <span class="btn-hint">放置黑子并继续</span>
-            </button>
-          </div>
+    <!-- 五手两打 - 选择阶段（精简版，不遮挡棋盘） -->
+    <div v-if="phase === 'five-choose'" class="phase-panel five-choose compact">
+      <div class="compact-content">
+        <div class="compact-title">
+          <span class="phase-icon">🎯</span>
+          <span>五手两打 - 白方选择落子点</span>
+        </div>
+        <div class="compact-actions">
+          <button 
+            v-for="(offer, index) in fiveOffers" 
+            :key="index"
+            class="compact-btn"
+            @click="emit('chooseFiveOffer', index)"
+          >
+            <span class="btn-label">选点 {{ index + 1 }}</span>
+            <span class="btn-position">({{ offer.row + 1 }}, {{ offer.col + 1 }})</span>
+          </button>
         </div>
       </div>
     </div>
@@ -132,6 +124,62 @@ const emit = defineEmits<Emits>();
 .five-choose {
   border: 3px solid #2196f3;
   background: linear-gradient(135deg, #e3f2fd, #ffffff);
+}
+
+/* 精简版样式 - 不遮挡棋盘 */
+.five-choose.compact {
+  padding: 15px 20px;
+}
+
+.compact-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.compact-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.compact-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.compact-btn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #4caf50, #388e3c);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 120px;
+}
+
+.compact-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-label {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.btn-position {
+  font-size: 13px;
+  opacity: 0.9;
 }
 
 .phase-title {
@@ -198,12 +246,6 @@ const emit = defineEmits<Emits>();
   color: white;
 }
 
-.choose-btn-full {
-  background: linear-gradient(135deg, #4caf50, #388e3c);
-  color: white;
-  width: 100%;
-}
-
 .btn-icon {
   font-size: 24px;
 }
@@ -229,45 +271,22 @@ const emit = defineEmits<Emits>();
   font-weight: bold;
 }
 
-.offers-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-.offer-option {
-  background: rgba(255, 255, 255, 0.8);
-  border: 2px solid #2196f3;
-  border-radius: 12px;
-  padding: 15px;
-}
-
-.offer-label {
-  font-size: 16px;
-  font-weight: bold;
-  color: #2196f3;
-  margin-bottom: 5px;
-}
-
-.offer-position {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 12px;
-}
-
-.offer-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 @media (max-width: 768px) {
   .action-buttons {
     grid-template-columns: 1fr;
   }
   
-  .offers-grid {
-    grid-template-columns: 1fr;
+  .compact-content {
+    flex-direction: column;
+  }
+  
+  .compact-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .compact-btn {
+    width: 100%;
   }
 }
 </style>

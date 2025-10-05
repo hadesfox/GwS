@@ -25,7 +25,6 @@ export function useGobang() {
       : null;
   });
 
-  // 检查某个方向的棋型
   const checkPattern = (row: number, col: number, dx: number, dy: number, player: Player): Pattern => {
     if (!player) return { count: 0, openEnds: 0, type: 'dead' };
 
@@ -223,15 +222,25 @@ export function useGobang() {
 
     // 专业模式阶段判断
     if (mode.value === 'professional') {
-      if (moveHistory.value.length === 3) {
+      // 第2手后仍是黑方回合（黑方下白子）
+      if (moveHistory.value.length === 2) {
+        currentPlayer.value = 'black';
+        updateForbiddenMoves();
+        return true;
+      }
+      // 第3手后进入三手交换
+      else if (moveHistory.value.length === 3) {
         professionalPhase.value = 'three-swap';
         currentPlayer.value = 'white';
         updateForbiddenMoves();
         return true;
-      } else if (moveHistory.value.length === 4 && professionalPhase.value === 'three-swap') {
+      }
+      // 三手交换后的第一手
+      else if (moveHistory.value.length === 4 && professionalPhase.value === 'three-swap') {
         professionalPhase.value = 'normal';
-      } else if (moveHistory.value.length === 4 && professionalPhase.value === 'normal') {
-        // 第4手后进入五手两打
+      }
+      // 第4手后进入五手两打
+      else if (moveHistory.value.length === 4 && professionalPhase.value === 'normal') {
         professionalPhase.value = 'five-offer';
         currentPlayer.value = 'black';
         fiveOffers.value = [];
@@ -286,7 +295,6 @@ export function useGobang() {
 
     fiveOffers.value = [];
     
-    // **修改：白方选择后继续白方回合**
     currentPlayer.value = 'white';
     professionalPhase.value = 'normal';
     
@@ -294,7 +302,7 @@ export function useGobang() {
   };
 
   const undo = () => {
-    // **专业模式禁止悔棋**
+    // 专业模式禁止悔棋
     if (mode.value === 'professional') {
       return;
     }
@@ -329,13 +337,13 @@ export function useGobang() {
     fiveOffers.value = [];
     forbiddenMoves.value = [];
 
-    // **专业模式：自动放置中心棋子**
+    // 专业模式开局：第1手中心黑子
     if (mode.value === 'professional') {
       const centerPos = Math.floor(BOARD_SIZE / 2);
       board.value[centerPos][centerPos] = 'black';
       moveHistory.value.push({ row: centerPos, col: centerPos });
-      // 第一手已下，轮到白方
-      currentPlayer.value = 'white';
+      // 第1手后仍是黑方回合（因为前3手都是黑方控制）
+      currentPlayer.value = 'black';
     }
   };
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
-import type { Player, Position } from '../types/game';
+import type { Player, Position, ProfessionalPhase } from '../types/game';
 import { BOARD_SIZE } from '../types/game';
 
 interface Props {
@@ -9,8 +9,10 @@ interface Props {
   lastMove?: Position | null;
   forbiddenMoves?: Position[];
   fiveOffers?: Position[];
-  currentPlayer: 'black' | 'white'; // 新增
-  playerSide: 'black' | 'white'; // 新增：当前画面控制方
+  currentPlayer: 'black' | 'white';
+  playerSide: 'black' | 'white';
+  professionalPhase?: ProfessionalPhase;
+  moveCount: number;
 }
 
 interface Emits {
@@ -21,7 +23,8 @@ const props = withDefaults(defineProps<Props>(), {
   isGameOver: false,
   lastMove: null,
   forbiddenMoves: () => [],
-  fiveOffers: () => []
+  fiveOffers: () => [],
+  professionalPhase: 'normal'
 });
 
 const emit = defineEmits<Emits>();
@@ -33,9 +36,21 @@ const cellSize = computed(() => {
   return containerSize / BOARD_SIZE;
 });
 
-// **新增：判断是否可以下棋**
+// 判断是否可以下棋
 const canMove = computed(() => {
-  return !props.isGameOver && props.currentPlayer === props.playerSide;
+  if (props.isGameOver) return false;
+  
+  // 五手两打选择阶段，白方不能点击棋盘
+  if (props.professionalPhase === 'five-choose' && props.playerSide === 'white') {
+    return false;
+  }
+  
+  // 第2手时黑方下白子
+  if (props.moveCount === 1) {
+    return props.playerSide === 'black';
+  }
+  
+  return props.currentPlayer === props.playerSide;
 });
 
 const handleClick = (row: number, col: number) => {
@@ -106,13 +121,6 @@ onUnmounted(() => {
           />
         </div>
       </template>
-    </div>
-    
-    <!-- 非回合提示遮罩 -->
-    <div v-if="!canMove && !isGameOver" class="turn-overlay">
-      <div class="turn-message">
-        等待{{ currentPlayer === 'black' ? '黑方' : '白方' }}下棋...
-      </div>
     </div>
   </div>
 </template>
@@ -220,29 +228,6 @@ onUnmounted(() => {
   border-radius: 50%;
   background-color: rgba(255, 0, 0, 0.6);
   animation: pulse 1s infinite;
-}
-
-.turn-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-}
-
-.turn-message {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 20px 40px;
-  border-radius: 15px;
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes pulse {
