@@ -28,6 +28,8 @@ const {
   skipNextTurn,
   counterWindowOpen,
   counterWindowPlayer,
+  flySandBanned,
+  diversionTurnsLeft,
   makeMove,
   undo,
   restart,
@@ -53,6 +55,8 @@ const startGame = (selectedMode: GameMode) => {
 const backToStart = () => {
   restart();
   gameStarted.value = false;
+  titleClickCount.value = 0;
+  showCheatButton.value = false;
 };
 
 const canUndo = computed(() => {
@@ -107,7 +111,7 @@ const handleCheat = () => {
 const canCounter = computed(() => {
   if (!counterWindowOpen.value || !counterWindowPlayer.value) return false;
   const mana = counterWindowPlayer.value === 'black' ? blackMana.value : whiteMana.value;
-  return mana.current >= 13; // 东山再起需要13点法力
+  return mana.current >= 13;
 });
 
 const handleCounterSkill = () => {
@@ -116,7 +120,6 @@ const handleCounterSkill = () => {
   }
 };
 
-// 当进入决策阶段时，滚动到页面顶部
 watch(showDecisionHint, (newValue) => {
   if (newValue) {
     setTimeout(() => {
@@ -125,14 +128,13 @@ watch(showDecisionHint, (newValue) => {
   }
 });
 
-// 添加自动关闭反制窗口的定时器
 watch(counterWindowOpen, (isOpen) => {
   if (isOpen) {
     setTimeout(() => {
       if (counterWindowOpen.value) {
         closeCounterWindow();
       }
-    }, 3000);  // 3秒后自动执行
+    }, 3000);
   }
 });
 </script>
@@ -153,7 +155,7 @@ watch(counterWindowOpen, (isOpen) => {
     </header>
 
     <main class="main">
-      <!-- 反制窗口提示 - 只在对方视角显示 -->
+      <!-- 反制窗口提示 -->
       <div v-if="counterWindowOpen && counterWindowPlayer" class="counter-window">
         <div class="counter-content">
           <div class="counter-icon">⚠️</div>
@@ -191,6 +193,22 @@ watch(counterWindowOpen, (isOpen) => {
         {{ skipNextTurn === 'black' ? '黑方' : '白方' }}下一回合将被跳过(静如止水效果)
       </div>
 
+      <!-- 调虎离山提示 -->
+      <div v-if="diversionTurnsLeft > 0" class="diversion-hint">
+        <span class="diversion-icon">🎯</span>
+        {{ currentPlayer === 'black' ? '白方' : '黑方' }}将暂停 {{ diversionTurnsLeft }} 回合(调虎离山效果)
+      </div>
+
+      <!-- 飞沙走石禁用提示 -->
+      <div v-if="flySandBanned.black > 0" class="ban-hint black-ban">
+        <span class="ban-icon">✊</span>
+        黑方禁止使用飞沙走石，剩余 {{ flySandBanned.black }} 回合
+      </div>
+      <div v-if="flySandBanned.white > 0" class="ban-hint white-ban">
+        <span class="ban-icon">✊</span>
+        白方禁止使用飞沙走石，剩余 {{ flySandBanned.white }} 回合
+      </div>
+
       <div v-if="showDecisionHint" class="top-hint">
         {{ getDecisionHintText }}
       </div>
@@ -215,7 +233,14 @@ watch(counterWindowOpen, (isOpen) => {
         @choose-five-offer="chooseFiveOffer"
       />
 
-      <!-- 新布局：技能面板在两侧 -->
+      <!-- 作弊按钮 - 在棋盘上方 -->
+      <div v-if="showCheatButton" class="cheat-container">
+        <button class="cheat-btn" @click="handleCheat">
+          🎮 作弊: 双方+2法力
+        </button>
+      </div>
+
+      <!-- 游戏容器 -->
       <div class="game-container">
         <!-- 黑方技能区域 -->
         <div class="side-panel left-panel">
@@ -306,12 +331,6 @@ watch(counterWindowOpen, (isOpen) => {
         @undo="undo"
         @restart="restart"
       />
-
-      <div v-if="showCheatButton" class="cheat-container">
-        <button class="cheat-btn" @click="handleCheat">
-          🎮 作弊: +2法力
-        </button>
-      </div>
 
       <div v-if="mode === 'professional' && forbiddenMoves.length > 0" class="hint-box">
         <div class="hint-icon">⚠️</div>
@@ -532,7 +551,7 @@ watch(counterWindowOpen, (isOpen) => {
   font-weight: bold;
   text-align: center;
   box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -542,6 +561,55 @@ watch(counterWindowOpen, (isOpen) => {
 
 .skip-icon {
   font-size: 24px;
+}
+
+.diversion-hint {
+  background: linear-gradient(135deg, #e91e63, #f06292);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.diversion-icon {
+  font-size: 24px;
+}
+
+.ban-hint {
+  color: white;
+  padding: 12px 25px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.black-ban {
+  background: linear-gradient(135deg, #424242, #616161);
+}
+
+.white-ban {
+  background: linear-gradient(135deg, #9e9e9e, #bdbdbd);
+}
+
+.ban-icon {
+  font-size: 20px;
 }
 
 .top-hint {
@@ -566,6 +634,35 @@ watch(counterWindowOpen, (isOpen) => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.cheat-container {
+  margin: 15px 0;
+  text-align: center;
+}
+
+.cheat-btn {
+  padding: 10px 25px;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  animation: rainbow 3s infinite;
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.cheat-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 12px rgba(255, 152, 0, 0.4);
 }
 
 .game-container {
@@ -643,35 +740,6 @@ watch(counterWindowOpen, (isOpen) => {
 
 .white-board {
   border: 3px solid #e0e0e0;
-}
-
-.cheat-container {
-  margin: 20px 0;
-  text-align: center;
-}
-
-.cheat-btn {
-  padding: 12px 30px;
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  animation: rainbow 3s infinite;
-}
-
-@keyframes rainbow {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-
-.cheat-btn:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 6px 12px rgba(255, 152, 0, 0.4);
 }
 
 .hint-box {
@@ -759,4 +827,3 @@ watch(counterWindowOpen, (isOpen) => {
     gap: 15px;
   }
 }
-</style>

@@ -43,34 +43,25 @@ const cellSize = computed(() => {
   return containerSize / BOARD_SIZE;
 });
 
-// 判断是否可以下棋
 const canMove = computed(() => {
   if (props.isGameOver) return false;
   
-  // 基础模式：简单的回合判断
-  if (props.mode === 'basic') {
-    return props.currentPlayer === props.playerSide;
-  }
-  
-  // 以下是专业模式的特殊规则
-  
-  // 三手交换阶段锁定棋盘
   if (props.professionalPhase === 'three-swap') {
     return false;
   }
   
-  // 五手两打选择阶段的锁定逻辑
   if (props.professionalPhase === 'five-choose') {
     if (props.hasSwapped) {
-      // 交换后：黑方选择，黑方棋盘锁定
       if (props.playerSide === 'black') return false;
     } else {
-      // 未交换：白方选择，白方棋盘锁定
       if (props.playerSide === 'white') return false;
     }
   }
   
-  // 第2手时黑方下白子
+  if (props.mode === 'basic') {
+    return props.currentPlayer === props.playerSide;
+  }
+  
   if (props.moveCount === 1) {
     return props.playerSide === 'black';
   }
@@ -79,13 +70,11 @@ const canMove = computed(() => {
 });
 
 const handleClick = (row: number, col: number) => {
-  // 如果正在选择技能目标
   if (props.skillState?.isSelecting && props.skillState.player === props.playerSide) {
     emit('executeSkill', row, col);
     return;
   }
   
-  // 正常下棋逻辑
   if (!canMove.value) return;
   emit('makeMove', row, col);
 };
@@ -105,8 +94,10 @@ const isFiveOffer = (row: number, col: number) => {
 const isValidSkillTarget = (row: number, col: number) => {
   if (!props.skillState?.isSelecting) return false;
   if (props.skillState.skillType === 'fly-sand') {
-    // 飞沙走石：只能选择有棋子的位置
     return props.board[row][col] !== null;
+  }
+  if (props.skillState.skillType === 'cleaner') {
+    return true;
   }
   return false;
 };
@@ -152,17 +143,14 @@ onUnmounted(() => {
           :style="{ width: `${cellSize}px`, height: `${cellSize}px` }"
           @click="handleClick(rowIndex, colIndex)"
         >
-          <!-- 技能目标高亮 -->
           <div v-if="isValidSkillTarget(rowIndex, colIndex)" class="skill-target-indicator">
             🎯
           </div>
           
-          <!-- 禁手标记（仅专业模式） -->
           <div v-if="mode === 'professional' && !cell && isForbidden(rowIndex, colIndex)" class="forbidden-mark">
             ✕
           </div>
           
-          <!-- 五手两打候选标记（仅专业模式） -->
           <div v-if="mode === 'professional' && isFiveOffer(rowIndex, colIndex)" class="offer-mark">
             {{ fiveOffers?.findIndex(pos => pos.row === rowIndex && pos.col === colIndex) + 1 }}
           </div>
@@ -176,12 +164,15 @@ onUnmounted(() => {
       </template>
     </div>
     
-    <!-- 技能选择提示 -->
     <div v-if="skillState?.isSelecting && skillState.player === playerSide" class="skill-hint">
       <div class="skill-hint-content">
         <span class="skill-hint-icon">⚡</span>
         <span class="skill-hint-text">
-          {{ skillState.skillType === 'fly-sand' ? '点击一个棋子将其移除' : '选择技能目标' }}
+          {{ 
+            skillState.skillType === 'fly-sand' ? '点击一个棋子将其移除' : 
+            skillState.skillType === 'cleaner' ? '点击任意位置选择该行及上下相邻行清空' :
+            '选择技能目标' 
+          }}
         </span>
       </div>
     </div>

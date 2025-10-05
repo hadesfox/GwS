@@ -112,22 +112,22 @@ export const SKILLS: Skill[] = [
   {
     id: 'capture',
     name: '擒擒又拿拿',
-    description: '技能描述待定',
+    description: '让对方在两回合内禁止使用飞沙走石',
     manaCost: 3,
     icon: '✊'
   },
   {
     id: 'diversion',
-    name: '调呈离山',
-    description: '技能描述待定',
-    manaCost: 4,
+    name: '调虎离山',
+    description: '让对方暂停三回合',
+    manaCost: 10,
     icon: '🎯'
   },
   {
     id: 'cleaner',
     name: '保洁上门',
-    description: '技能描述待定',
-    manaCost: 5,
+    description: '选择相邻的三行棋子清空',
+    manaCost: 7,
     icon: '🧹'
   },
   {
