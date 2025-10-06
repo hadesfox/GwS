@@ -157,5 +157,19 @@ export const SKILLS: Skill[] = [
     description: '直接获得胜利',
     manaCost: 30,
     icon: '👋'
+  },
+  {
+    id: 'earth-rotate',
+    name: '地球自转母亲公转',
+    description: '技能描述待定',
+    manaCost: 20,
+    icon: '🌍'
+  },
+  {
+    id: 'cold-king',
+    name: '冷酸灵智取王世昌',
+    description: '技能描述待定',
+    manaCost: 25,
+    icon: '❄️'
   }
 ];

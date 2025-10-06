@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
-import type { Player, Position, ProfessionalPhase, GameMode, SkillState } from '../types/game';
+import type { Player, Position, ProfessionalPhase, GameMode, SkillState, ManaState } from '../types/game';
 import { BOARD_SIZE } from '../types/game';
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
   hasSwapped?: boolean;
   mode: GameMode;
   skillState?: SkillState;
+  mana?: ManaState;
+  totalMoves?: number;
 }
 
 interface Emits {
@@ -31,7 +33,8 @@ const props = withDefaults(defineProps<Props>(), {
   professionalPhase: 'normal',
   hasSwapped: false,
   mode: 'basic',
-  skillState: () => ({ isSelecting: false, skillType: null, player: null })
+  skillState: () => ({ isSelecting: false, skillType: null, player: null }),
+  totalMoves: 0
 });
 
 const emit = defineEmits<Emits>();
@@ -112,16 +115,30 @@ const isFiveOffer = (row: number, col: number) => {
   return props.fiveOffers?.some(pos => pos.row === row && pos.col === col) || false;
 };
 
-// const isValidSkillTarget = (row: number, col: number) => {
-//   if (!props.skillState?.isSelecting) return false;
-//   if (props.skillState.skillType === 'fly-sand') {
-//     return props.board[row][col] !== null;
-//   }
-//   if (props.skillState.skillType === 'cleaner') {
-//     return true;
-//   }
-//   return false;
-// };
+const isValidSkillTarget = (row: number, col: number) => {
+  if (!props.skillState?.isSelecting) return false;
+  if (props.skillState.skillType === 'fly-sand') {
+    return props.board[row][col] !== null;
+  }
+  return false;
+};
+
+const stepsToNextMana = computed(() => {
+  if (!props.mana || !props.totalMoves) return 0;
+  const remainder = props.totalMoves % 4;
+  
+  if (props.playerSide === 'black') {
+    if (remainder === 0) return 3;
+    if (remainder === 1) return 2;
+    if (remainder === 2) return 1;
+    return 0;
+  } else {
+    if (remainder === 1) return 3;
+    if (remainder === 2) return 2;
+    if (remainder === 3) return 1;
+    return 0;
+  }
+});
 
 const updateWindowWidth = () => {
   windowWidth.value = window.innerWidth;
@@ -141,10 +158,28 @@ onUnmounted(() => {
     'disabled': !canMove,
     'skill-selecting': skillState?.isSelecting && skillState.player === playerSide
   }">
-    <!-- 添加玩家标识 -->
-    <div class="player-indicator" :class="`player-${playerSide}`">
-      <span class="indicator-icon">{{ playerSide === 'black' ? '⚫' : '⚪' }}</span>
-      <span class="indicator-text">{{ playerSide === 'black' ? '黑方' : '白方' }}</span>
+    <!-- 棋盘顶部：玩家标识 + 法力值 -->
+    <div class="board-header">
+      <div class="player-badge" :class="playerSide">
+        <span class="player-icon">{{ playerSide === 'black' ? '⚫' : '⚪' }}</span>
+        <span class="player-name">{{ playerSide === 'black' ? '黑方' : '白方' }}</span>
+      </div>
+      
+      <div v-if="mana" class="mana-display">
+        <div class="mana-info">
+          <span class="mana-label">💎</span>
+          <span class="mana-count">{{ mana.current }}/{{ mana.max }}</span>
+        </div>
+        <div class="mana-mini-bar">
+          <div 
+            class="mana-fill" 
+            :style="{ width: (mana.current / mana.max * 100) + '%' }"
+          ></div>
+        </div>
+        <div v-if="stepsToNextMana > 0" class="mana-hint">
+          再走{{ stepsToNextMana }}步+1
+        </div>
+      </div>
     </div>
 
     <div class="board-wrapper">
@@ -239,7 +274,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
   position: relative;
 }
 
@@ -248,38 +282,86 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.player-indicator {
-  padding: 12px 30px;
-  border-radius: 15px;
-  margin-bottom: 15px;
+.board-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 20px;
-  font-weight: bold;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 150px;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }
 
-.player-black {
+.player-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.player-badge.black {
   background: linear-gradient(135deg, #333, #555);
   color: white;
-  border: 3px solid #000;
 }
 
-.player-white {
+.player-badge.white {
   background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
   color: #333;
-  border: 3px solid #bdbdbd;
 }
 
-.indicator-icon {
-  font-size: 28px;
+.player-icon {
+  font-size: 20px;
 }
 
-.indicator-text {
-  font-size: 22px;
+.player-name {
+  font-size: 14px;
+}
+
+.mana-display {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100px;
+}
+
+.mana-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.mana-label {
+  font-size: 14px;
+}
+
+.mana-count {
+  color: #00d4ff;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.mana-mini-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mana-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff, #0096ff);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.mana-hint {
+  font-size: 10px;
+  color: #aaa;
+  text-align: right;
 }
 
 .board-wrapper {
@@ -301,7 +383,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
   color: #8b4513;
 }
@@ -436,13 +518,13 @@ onUnmounted(() => {
 
 .skill-hint {
   position: absolute;
-  bottom: -60px;
+  bottom: -50px;
   left: 50%;
   transform: translateX(-50%);
   background: linear-gradient(135deg, #ffd700, #ffed4e);
   color: #333;
-  padding: 12px 24px;
-  border-radius: 25px;
+  padding: 10px 20px;
+  border-radius: 20px;
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
   font-weight: bold;
   white-space: nowrap;
@@ -468,10 +550,10 @@ onUnmounted(() => {
 }
 
 .skill-hint-icon {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .skill-hint-text {
-  font-size: 14px;
+  font-size: 13px;
 }
 </style>

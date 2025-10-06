@@ -269,15 +269,10 @@ watch(counterWindowOpen, (isOpen) => {
         </button>
       </div>
 
-      <!-- 游戏容器 - 优化布局 -->
+      <!-- 游戏容器 -->
       <div class="game-container">
-        <!-- 黑方区域 -->
+        <!-- 黑方技能区域 - 移除ManaBar -->
         <div class="player-section">
-          <ManaBar 
-            :mana="blackMana" 
-            player-side="black"
-            :total-moves="moveHistory.length"
-          />
           <SkillPanel 
             :mana="blackMana" 
             player-side="black"
@@ -287,12 +282,12 @@ watch(counterWindowOpen, (isOpen) => {
           />
         </div>
 
-        <!-- 棋盘区域 -->
+        <!-- 棋盘区域 - 传递法力值 -->
         <div class="board-container">
           <div class="dual-board">
             <!-- 黑方棋盘 -->
             <div class="board-wrapper black-board">
-              <!-- 两极反转锁定覆盖层 - 施法者 -->
+              <!-- 覆盖层... -->
               <div v-if="reverseEffect.casterLocked && reverseEffect.casterPlayer === 'black'" class="locked-overlay">
                 <div class="locked-container">
                   <div class="locked-icon">🔒</div>
@@ -301,7 +296,6 @@ watch(counterWindowOpen, (isOpen) => {
                 </div>
               </div>
 
-              <!-- 两极反转进度条 - 对方 -->
               <div v-if="reverseEffect.showProgressBar && reverseEffect.targetPlayer === 'black'" class="reverse-overlay">
                 <div class="loading-container">
                   <div class="loading-icon">💾</div>
@@ -334,6 +328,8 @@ watch(counterWindowOpen, (isOpen) => {
                 :has-swapped="hasSwapped"
                 :mode="mode"
                 :skill-state="skillState"
+                :mana="blackMana"
+                :total-moves="moveHistory.length"
                 @make-move="makeMove"
                 @execute-skill="handleExecuteSkill"
               />
@@ -341,7 +337,7 @@ watch(counterWindowOpen, (isOpen) => {
 
             <!-- 白方棋盘 -->
             <div class="board-wrapper white-board">
-              <!-- 两极反转锁定覆盖层 - 施法者 -->
+              <!-- 覆盖层... -->
               <div v-if="reverseEffect.casterLocked && reverseEffect.casterPlayer === 'white'" class="locked-overlay">
                 <div class="locked-container">
                   <div class="locked-icon">🔒</div>
@@ -350,7 +346,6 @@ watch(counterWindowOpen, (isOpen) => {
                 </div>
               </div>
 
-              <!-- 两极反转进度条 - 对方 -->
               <div v-if="reverseEffect.showProgressBar && reverseEffect.targetPlayer === 'white'" class="reverse-overlay">
                 <div class="loading-container">
                   <div class="loading-icon">💾</div>
@@ -383,6 +378,8 @@ watch(counterWindowOpen, (isOpen) => {
                 :has-swapped="hasSwapped"
                 :mode="mode"
                 :skill-state="skillState"
+                :mana="whiteMana"
+                :total-moves="moveHistory.length"
                 @make-move="makeMove"
                 @execute-skill="handleExecuteSkill"
               />
@@ -390,13 +387,8 @@ watch(counterWindowOpen, (isOpen) => {
           </div>
         </div>
 
-        <!-- 白方区域 -->
+        <!-- 白方技能区域 - 移除ManaBar -->
         <div class="player-section">
-          <ManaBar 
-            :mana="whiteMana" 
-            player-side="white"
-            :total-moves="moveHistory.length"
-          />
           <SkillPanel 
             :mana="whiteMana" 
             player-side="white"
