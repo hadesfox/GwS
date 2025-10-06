@@ -884,6 +884,7 @@ export function useGobang() {
   }));
 
   return {
+    // ... 现有的返回值
     board,
     currentPlayer,
     winner,
@@ -902,8 +903,8 @@ export function useGobang() {
     skipNextTurn,
     counterWindowOpen,
     counterWindowPlayer,
-    flySandBanned,
-    diversionTurnsLeft,
+    flySandBanned, // 新增
+    diversionTurnsLeft, // 新增
     makeMove,
     undo,
     restart,

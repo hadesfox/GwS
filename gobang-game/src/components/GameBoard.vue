@@ -36,6 +36,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
+const hoverRow = ref<number | null>(null);
+
 const windowWidth = ref(window.innerWidth);
 
 const cellSize = computed(() => {
@@ -77,6 +79,26 @@ const handleClick = (row: number, col: number) => {
   
   if (!canMove.value) return;
   emit('makeMove', row, col);
+};
+
+const handleMouseEnter = (row: number) => {
+  if (props.skillState?.isSelecting && props.skillState.skillType === 'cleaner' && props.skillState.player === props.playerSide) {
+    hoverRow.value = row;
+  }
+};
+
+const handleMouseLeave = () => {
+  hoverRow.value = null;
+};
+
+const isInCleanerRange = (row: number) => {
+  if (!props.skillState?.isSelecting || props.skillState.skillType !== 'cleaner') return false;
+  if (hoverRow.value === null) return false;
+  
+  const startRow = Math.max(0, hoverRow.value - 1);
+  const endRow = Math.min(BOARD_SIZE - 1, hoverRow.value + 1);
+  
+  return row >= startRow && row <= endRow;
 };
 
 const isLastMove = (row: number, col: number) => {
@@ -138,10 +160,14 @@ onUnmounted(() => {
             'five-offer': isFiveOffer(rowIndex, colIndex),
             'not-my-turn': !canMove,
             'skill-target': isValidSkillTarget(rowIndex, colIndex),
-            'skill-mode': skillState?.isSelecting
+            'skill-mode': skillState?.isSelecting,
+            'cleaner-range': isInCleanerRange(rowIndex),
+            'cleaner-center': hoverRow === rowIndex && skillState?.skillType === 'cleaner'
           }"
           :style="{ width: `${cellSize}px`, height: `${cellSize}px` }"
           @click="handleClick(rowIndex, colIndex)"
+          @mouseenter="handleMouseEnter(rowIndex)"
+          @mouseleave="handleMouseLeave"
         >
           <div v-if="isValidSkillTarget(rowIndex, colIndex)" class="skill-target-indicator">
             🎯
@@ -170,7 +196,7 @@ onUnmounted(() => {
         <span class="skill-hint-text">
           {{ 
             skillState.skillType === 'fly-sand' ? '点击一个棋子将其移除' : 
-            skillState.skillType === 'cleaner' ? '点击任意位置选择该行及上下相邻行清空' :
+            skillState.skillType === 'cleaner' ? '悬停鼠标查看清空范围，点击确认' :
             '选择技能目标' 
           }}
         </span>
@@ -379,5 +405,25 @@ onUnmounted(() => {
 
 .skill-hint-text {
   font-size: 14px;
+}
+
+.cleaner-range {
+  background-color: rgba(255, 165, 0, 0.3) !important;
+  border: 2px solid rgba(255, 140, 0, 0.6);
+  animation: cleanerPulse 1s infinite;
+}
+
+.cleaner-center {
+  background-color: rgba(255, 140, 0, 0.5) !important;
+  border: 3px solid #ff8c00;
+}
+
+@keyframes cleanerPulse {
+  0%, 100% {
+    box-shadow: inset 0 0 10px rgba(255, 165, 0, 0.5);
+  }
+  50% {
+    box-shadow: inset 0 0 20px rgba(255, 165, 0, 0.8);
+  }
 }
 </style>

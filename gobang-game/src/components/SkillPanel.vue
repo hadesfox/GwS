@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { SKILLS } from '../types/game';
-import type { SkillType, ManaState, SkillState } from '../types/game';
+import type { SkillType, ManaState } from '../types/game';
 
 interface Props {
   mana: ManaState;
   playerSide: 'black' | 'white';
   disabled?: boolean;
-  skillState?: SkillState;  // 新增
+  flySandBanned?: number;
 }
 
 interface Emits {
@@ -15,13 +15,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
-  skillState: () => ({ 
-    isSelecting: false, 
-    skillType: null, 
-    player: null,
-    skipNextTurn: false,
-    canUseComeback: false
-  })
+  flySandBanned: 0
 });
 
 const emit = defineEmits<Emits>();
@@ -30,9 +24,9 @@ const canUseSkill = (skillId: SkillType, manaCost: number) => {
   if (props.disabled) return false;
   if (props.mana.current < manaCost) return false;
   
-  // 东山再起只能在对方使用力拔山兮后使用
-  if (skillId === 'comeback') {
-    return props.skillState?.canUseComeback || false;
+  // 检查飞沙走石是否被禁用
+  if (skillId === 'fly-sand' && props.flySandBanned > 0) {
+    return false;
   }
   
   return true;
@@ -43,6 +37,13 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
     emit('useSkill', skillId);
   }
 };
+
+const getSkillStatus = (skillId: SkillType) => {
+  if (skillId === 'fly-sand' && props.flySandBanned > 0) {
+    return `被禁用 (剩余${props.flySandBanned}回合)`;
+  }
+  return '';
+};
 </script>
 
 <template>
@@ -51,14 +52,6 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
       <span class="skill-icon">⚡</span>
       <span class="skill-title">技能</span>
     </div>
-    
-    <!-- 东山再起紧急提示 -->
-    <div v-if="skillState?.canUseComeback" class="comeback-alert">
-      <div class="alert-icon">⚠️</div>
-      <div class="alert-text">对方使用了力拔山兮！</div>
-      <div class="alert-hint">快速使用东山再起反击！</div>
-    </div>
-    
     <div class="skill-grid">
       <button
         v-for="skill in SKILLS"
@@ -67,7 +60,7 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
         :class="{ 
           'skill-available': canUseSkill(skill.id, skill.manaCost),
           'skill-locked': !canUseSkill(skill.id, skill.manaCost),
-          'skill-urgent': skill.id === 'comeback' && skillState?.canUseComeback
+          'skill-banned': skill.id === 'fly-sand' && flySandBanned > 0
         }"
         :disabled="!canUseSkill(skill.id, skill.manaCost)"
         @click="handleSkillClick(skill.id, skill.manaCost)"
@@ -80,7 +73,11 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
           <span>{{ skill.manaCost }}</span>
         </div>
         <div v-if="!canUseSkill(skill.id, skill.manaCost)" class="skill-overlay">
-          <span class="lock-icon">🔒</span>
+          <span v-if="skill.id === 'fly-sand' && flySandBanned > 0" class="ban-icon">✊</span>
+          <span v-else class="lock-icon">🔒</span>
+          <div v-if="skill.id === 'fly-sand' && flySandBanned > 0" class="ban-text">
+            剩余{{ flySandBanned }}回合
+          </div>
         </div>
       </button>
     </div>
@@ -93,7 +90,6 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
   border-radius: 12px;
   padding: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  width: 100%;
 }
 
 .skill-panel-black {
@@ -166,6 +162,12 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
   cursor: not-allowed;
 }
 
+.skill-banned {
+  border-color: #d32f2f;
+  background: linear-gradient(135deg, #5a1a1a, #3a1a2a);
+  opacity: 0.6;
+}
+
 .skill-icon-large {
   font-size: 32px;
   text-align: center;
@@ -198,67 +200,34 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
+  gap: 5px;
 }
 
 .lock-icon {
   font-size: 24px;
 }
 
-.comeback-alert {
-  background: linear-gradient(135deg, #ff5252, #ff1744);
-  color: white;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 12px;
-  text-align: center;
-  animation: pulse 1s infinite;
-  box-shadow: 0 4px 12px rgba(255, 23, 68, 0.5);
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 4px 12px rgba(255, 23, 68, 0.5);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(255, 23, 68, 0.8);
-  }
-}
-
-.alert-icon {
+.ban-icon {
   font-size: 32px;
-  margin-bottom: 8px;
+  animation: shake 0.5s infinite;
 }
 
-.alert-text {
-  font-size: 16px;
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.ban-text {
+  color: #ff5252;
+  font-size: 11px;
   font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.alert-hint {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.skill-urgent {
-  border-color: #ff1744 !important;
-  background: linear-gradient(135deg, #ff5252, #ff1744) !important;
-  animation: urgentGlow 1s infinite;
-}
-
-@keyframes urgentGlow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(255, 23, 68, 0.6);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(255, 23, 68, 1);
-  }
+  text-align: center;
 }
 </style>

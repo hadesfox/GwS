@@ -118,7 +118,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'diversion',
-    name: '调虎离山',
+    name: '调呈离山',  // 修正名称
     description: '让对方暂停三回合',
     manaCost: 10,
     icon: '🎯'
@@ -146,7 +146,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'reverse',
-    name: '两级反转',
+    name: '两极反转',
     description: '技能描述待定',
     manaCost: 8,
     icon: '🔃'

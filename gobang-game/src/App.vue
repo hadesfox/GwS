@@ -257,6 +257,7 @@ watch(counterWindowOpen, (isOpen) => {
             :mana="blackMana" 
             player-side="black"
             :disabled="currentPlayer !== 'black' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'black')"
+            :fly-sand-banned="flySandBanned.black"
             @use-skill="(skillId) => handleSkillUse('black', skillId)"
           />
         </div>
@@ -321,6 +322,7 @@ watch(counterWindowOpen, (isOpen) => {
             :mana="whiteMana" 
             player-side="white"
             :disabled="currentPlayer !== 'white' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'white')"
+            :fly-sand-banned="flySandBanned.white"
             @use-skill="(skillId) => handleSkillUse('white', skillId)"
           />
         </div>
@@ -827,3 +829,4 @@ watch(counterWindowOpen, (isOpen) => {
     gap: 15px;
   }
 }
+</style>
