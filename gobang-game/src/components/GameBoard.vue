@@ -174,20 +174,23 @@ onUnmounted(() => {
           <span class="mana-label">💎 法力值</span>
           <span class="mana-count">{{ mana.current }}/{{ mana.max }}</span>
         </div>
-        <div class="mana-dots-container">
-          <div 
-            v-for="(isActive, index) in manaDotsArray" 
-            :key="index"
-            class="mana-dot"
-            :class="{ 
-              'active': isActive,
-              'special': (index + 1) % 10 === 0
-            }"
-          >
+        <div class="mana-content">
+          <div class="mana-hint-left">
+            <span v-if="stepsToNextMana > 0">再走{{ stepsToNextMana }}步+1</span>
+            <span v-else>&nbsp;</span>
           </div>
-        </div>
-        <div v-if="stepsToNextMana > 0" class="mana-hint">
-          再走{{ stepsToNextMana }}步获得法力
+          <div class="mana-dots-container">
+            <div 
+              v-for="(isActive, index) in manaDotsArray" 
+              :key="index"
+              class="mana-dot"
+              :class="{ 
+                'active': isActive,
+                'special': (index + 1) % 10 === 0
+              }"
+            >
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -369,6 +372,21 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
+.mana-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mana-hint-left {
+  font-size: 10px;
+  color: #aaa;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
 .mana-dots-container {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
@@ -377,6 +395,7 @@ onUnmounted(() => {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 6px;
   border: 1px solid #333;
+  flex: 1;
 }
 
 .mana-dot {
