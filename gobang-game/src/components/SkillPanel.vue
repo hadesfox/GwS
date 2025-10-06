@@ -7,6 +7,7 @@ interface Props {
   playerSide: 'black' | 'white';
   disabled?: boolean;
   flySandBanned?: number;
+  skipNextTurn?: 'black' | 'white' | null;
 }
 
 interface Emits {
@@ -15,7 +16,8 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
-  flySandBanned: 0
+  flySandBanned: 0,
+  skipNextTurn: null
 });
 
 const emit = defineEmits<Emits>();
@@ -26,6 +28,11 @@ const canUseSkill = (skillId: SkillType, manaCost: number) => {
   
   // 检查飞沙走石是否被禁用
   if (skillId === 'fly-sand' && props.flySandBanned > 0) {
+    return false;
+  }
+  
+  // 检查水滴石穿是否可用（只有静如止水生效时才能用）
+  if (skillId === 'water-drop' && !props.skipNextTurn) {
     return false;
   }
   
@@ -41,6 +48,9 @@ const handleSkillClick = (skillId: SkillType, manaCost: number) => {
 const getSkillStatus = (skillId: SkillType) => {
   if (skillId === 'fly-sand' && props.flySandBanned > 0) {
     return `被禁用 (剩余${props.flySandBanned}回合)`;
+  }
+  if (skillId === 'water-drop' && !props.skipNextTurn) {
+    return '静如止水未生效';
   }
   return '';
 };
@@ -60,7 +70,8 @@ const getSkillStatus = (skillId: SkillType) => {
         :class="{ 
           'skill-available': canUseSkill(skill.id, skill.manaCost),
           'skill-locked': !canUseSkill(skill.id, skill.manaCost),
-          'skill-banned': skill.id === 'fly-sand' && flySandBanned > 0
+          'skill-banned': skill.id === 'fly-sand' && flySandBanned > 0,
+          'skill-conditional-ban': skill.id === 'water-drop' && !skipNextTurn && mana.current >= skill.manaCost
         }"
         :disabled="!canUseSkill(skill.id, skill.manaCost)"
         @click="handleSkillClick(skill.id, skill.manaCost)"
@@ -74,9 +85,13 @@ const getSkillStatus = (skillId: SkillType) => {
         </div>
         <div v-if="!canUseSkill(skill.id, skill.manaCost)" class="skill-overlay">
           <span v-if="skill.id === 'fly-sand' && flySandBanned > 0" class="ban-icon">✊</span>
+          <span v-else-if="skill.id === 'water-drop' && !skipNextTurn && mana.current >= skill.manaCost" class="ban-icon">🚫</span>
           <span v-else class="lock-icon">🔒</span>
           <div v-if="skill.id === 'fly-sand' && flySandBanned > 0" class="ban-text">
             剩余{{ flySandBanned }}回合
+          </div>
+          <div v-else-if="skill.id === 'water-drop' && !skipNextTurn && mana.current >= skill.manaCost" class="ban-text">
+            条件不满足
           </div>
         </div>
       </button>
@@ -90,6 +105,9 @@ const getSkillStatus = (skillId: SkillType) => {
   border-radius: 12px;
   padding: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .skill-panel-black {
@@ -107,6 +125,7 @@ const getSkillStatus = (skillId: SkillType) => {
   margin-bottom: 12px;
   padding-bottom: 10px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .skill-header .skill-icon {
@@ -122,9 +141,21 @@ const getSkillStatus = (skillId: SkillType) => {
 }
 
 .skill-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 5px;
+}
+
+/* 当技能数量较多时，自动分成两列 */
+@media (min-height: 800px) {
+  .skill-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-auto-flow: column;
+    grid-template-rows: repeat(6, auto);
+  }
 }
 
 .skill-btn {
@@ -166,6 +197,12 @@ const getSkillStatus = (skillId: SkillType) => {
   border-color: #d32f2f;
   background: linear-gradient(135deg, #5a1a1a, #3a1a2a);
   opacity: 0.6;
+}
+
+.skill-conditional-ban {
+  border-color: #d32f2f;
+  background: linear-gradient(135deg, #5a1a1a, #3a1a2a);
+  opacity: 0.7;
 }
 
 .skill-icon-large {
@@ -229,5 +266,24 @@ const getSkillStatus = (skillId: SkillType) => {
   font-size: 11px;
   font-weight: bold;
   text-align: center;
+}
+
+/* 自定义滚动条 */
+.skill-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.skill-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.skill-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.skill-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>

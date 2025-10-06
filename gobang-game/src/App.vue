@@ -269,100 +269,94 @@ watch(counterWindowOpen, (isOpen) => {
       </div>
 
       <!-- 游戏容器 -->
-      <div class="game-container">
-        <!-- 黑方技能区域 -->
-        <div class="side-panel left-panel">
-          <div class="player-label black-label">
-            <span class="player-icon">⚫</span>
-            <span>黑方</span>
-          </div>
-          <ManaBar
-            :mana="blackMana"
-            player-side="black"
-            :total-moves="moveHistory.length"
-          />
-          <SkillPanel
-            :mana="blackMana"
-            player-side="black"
-            :disabled="
-              currentPlayer !== 'black' ||
-              isGameOver ||
-              (counterWindowOpen && counterWindowPlayer === 'black')
-            "
-            :fly-sand-banned="flySandBanned.black"
-            @use-skill="(skillId) => handleSkillUse('black', skillId)"
+  <div class="game-container">
+    <!-- 黑方技能区域 -->
+    <div class="side-panel left-panel">
+      <div class="player-label black-label">
+        <span class="player-icon">⚫</span>
+        <span>黑方</span>
+      </div>
+      <ManaBar 
+        :mana="blackMana" 
+        player-side="black"
+        :total-moves="moveHistory.length"
+      />
+      <SkillPanel 
+        :mana="blackMana" 
+        player-side="black"
+        :disabled="currentPlayer !== 'black' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'black')"
+        :fly-sand-banned="flySandBanned.black"
+        :skip-next-turn="skipNextTurn"
+        @use-skill="(skillId) => handleSkillUse('black', skillId)"
+      />
+    </div>
+
+         <!-- 棋盘区域 -->
+    <div class="board-container">
+      <div class="dual-board">
+        <!-- 黑方棋盘 -->
+        <div class="board-wrapper black-board">
+          <GameBoard
+            :board="board"
+            :is-game-over="isGameOver"
+            :last-move="lastMove"
+            :forbidden-moves="forbiddenMoves"
+            :five-offers="fiveOffers"
+            :current-player="currentPlayer"
+            :player-side="'black'"
+            :professional-phase="professionalPhase"
+            :move-count="moveHistory.length"
+            :has-swapped="hasSwapped"
+            :mode="mode"
+            :skill-state="skillState"
+            @make-move="makeMove"
+            @execute-skill="handleExecuteSkill"
           />
         </div>
 
-        <!-- 棋盘区域 -->
-        <div class="board-container">
-          <div class="dual-board">
-            <!-- 黑方棋盘 -->
-            <div class="board-wrapper black-board">
-              <GameBoard
-                :board="board"
-                :is-game-over="isGameOver"
-                :last-move="lastMove"
-                :forbidden-moves="forbiddenMoves"
-                :five-offers="fiveOffers"
-                :current-player="currentPlayer"
-                :player-side="'black'"
-                :professional-phase="professionalPhase"
-                :move-count="moveHistory.length"
-                :has-swapped="hasSwapped"
-                :mode="mode"
-                :skill-state="skillState"
-                @make-move="makeMove"
-                @execute-skill="handleExecuteSkill"
-              />
-            </div>
-
-            <!-- 白方棋盘 -->
-            <div class="board-wrapper white-board">
-              <GameBoard
-                :board="board"
-                :is-game-over="isGameOver"
-                :last-move="lastMove"
-                :forbidden-moves="forbiddenMoves"
-                :five-offers="fiveOffers"
-                :current-player="currentPlayer"
-                :player-side="'white'"
-                :professional-phase="professionalPhase"
-                :move-count="moveHistory.length"
-                :has-swapped="hasSwapped"
-                :mode="mode"
-                :skill-state="skillState"
-                @make-move="makeMove"
-                @execute-skill="handleExecuteSkill"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- 白方技能区域 -->
-        <div class="side-panel right-panel">
-          <div class="player-label white-label">
-            <span class="player-icon">⚪</span>
-            <span>白方</span>
-          </div>
-          <ManaBar
-            :mana="whiteMana"
-            player-side="white"
-            :total-moves="moveHistory.length"
-          />
-          <SkillPanel
-            :mana="whiteMana"
-            player-side="white"
-            :disabled="
-              currentPlayer !== 'white' ||
-              isGameOver ||
-              (counterWindowOpen && counterWindowPlayer === 'white')
-            "
-            :fly-sand-banned="flySandBanned.white"
-            @use-skill="(skillId) => handleSkillUse('white', skillId)"
+             <!-- 白方棋盘 -->
+        <div class="board-wrapper white-board">
+          <GameBoard
+            :board="board"
+            :is-game-over="isGameOver"
+            :last-move="lastMove"
+            :forbidden-moves="forbiddenMoves"
+            :five-offers="fiveOffers"
+            :current-player="currentPlayer"
+            :player-side="'white'"
+            :professional-phase="professionalPhase"
+            :move-count="moveHistory.length"
+            :has-swapped="hasSwapped"
+            :mode="mode"
+            :skill-state="skillState"
+            @make-move="makeMove"
+            @execute-skill="handleExecuteSkill"
           />
         </div>
       </div>
+    </div>
+
+        <!-- 白方技能区域 -->
+    <div class="side-panel right-panel">
+      <div class="player-label white-label">
+        <span class="player-icon">⚪</span>
+        <span>白方</span>
+      </div>
+      <ManaBar 
+        :mana="whiteMana" 
+        player-side="white"
+        :total-moves="moveHistory.length"
+      />
+      <SkillPanel 
+        :mana="whiteMana" 
+        player-side="white"
+        :disabled="currentPlayer !== 'white' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'white')"
+        :fly-sand-banned="flySandBanned.white"
+        :skip-next-turn="skipNextTurn"
+        @use-skill="(skillId) => handleSkillUse('white', skillId)"
+      />
+    </div>
+  </div>
 
       <GameControl :can-undo="canUndo" @undo="undo" @restart="restart" />
 
@@ -716,16 +710,17 @@ watch(counterWindowOpen, (isOpen) => {
 .game-container {
   display: flex;
   gap: 20px;
-  align-items: flex-start;
+  align-items: stretch;
   width: 100%;
   margin: 20px 0;
 }
 
 .side-panel {
-  flex: 0 0 250px;
+  flex: 0 0 280px;
   display: flex;
   flex-direction: column;
   gap: 15px;
+  min-height: 600px;
 }
 
 .left-panel {

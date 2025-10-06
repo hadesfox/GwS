@@ -141,6 +141,12 @@ onUnmounted(() => {
     'disabled': !canMove,
     'skill-selecting': skillState?.isSelecting && skillState.player === playerSide
   }">
+    <!-- 添加玩家标识 -->
+    <div class="player-indicator" :class="`player-${playerSide}`">
+      <span class="indicator-icon">{{ playerSide === 'black' ? '⚫' : '⚪' }}</span>
+      <span class="indicator-text">{{ playerSide === 'black' ? '黑方' : '白方' }}</span>
+    </div>
+
     <div class="board-wrapper">
       <!-- 顶部列号 -->
       <div class="coord-row top-coords" :style="{ marginLeft: `${cellSize + 8}px` }">
@@ -231,7 +237,7 @@ onUnmounted(() => {
 <style scoped>
 .game-board {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
   padding: 20px;
   position: relative;
@@ -240,6 +246,40 @@ onUnmounted(() => {
 .game-board.disabled {
   opacity: 0.6;
   pointer-events: none;
+}
+
+.player-indicator {
+  padding: 12px 30px;
+  border-radius: 15px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+}
+
+.player-black {
+  background: linear-gradient(135deg, #333, #555);
+  color: white;
+  border: 3px solid #000;
+}
+
+.player-white {
+  background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+  color: #333;
+  border: 3px solid #bdbdbd;
+}
+
+.indicator-icon {
+  font-size: 28px;
+}
+
+.indicator-text {
+  font-size: 22px;
 }
 
 .board-wrapper {
