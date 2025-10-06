@@ -264,7 +264,7 @@ onUnmounted(() => {
   cursor: crosshair;
 }
 
-.cell.skill-target {
+/* .cell.skill-target {
   background-color: rgba(255, 215, 0, 0.3);
   animation: pulseGold 1s infinite;
 }
@@ -299,7 +299,7 @@ onUnmounted(() => {
   50% {
     transform: translate(-50%, -50%) scale(1.2);
   }
-}
+} */
 
 .forbidden-mark {
   color: #d32f2f;
