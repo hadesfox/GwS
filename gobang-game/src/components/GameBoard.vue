@@ -407,23 +407,14 @@ onUnmounted(() => {
   font-size: 14px;
 }
 
+/* 修改保洁上门的视觉效果 - 只用红色边框 */
 .cleaner-range {
-  background-color: rgba(255, 165, 0, 0.3) !important;
-  border: 2px solid rgba(255, 140, 0, 0.6);
-  animation: cleanerPulse 1s infinite;
+  border: 3px solid #ff0000 !important;
+  box-sizing: border-box;
 }
 
 .cleaner-center {
-  background-color: rgba(255, 140, 0, 0.5) !important;
-  border: 3px solid #ff8c00;
-}
-
-@keyframes cleanerPulse {
-  0%, 100% {
-    box-shadow: inset 0 0 10px rgba(255, 165, 0, 0.5);
-  }
-  50% {
-    box-shadow: inset 0 0 20px rgba(255, 165, 0, 0.8);
-  }
+  border: 4px solid #ff0000 !important;
+  box-sizing: border-box;
 }
 </style>

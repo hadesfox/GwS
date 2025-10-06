@@ -703,39 +703,40 @@ export function useGobang() {
 
     // 处理调虎离山效果
     if (diversionTurnsLeft.value > 0) {
-      console.log(
-        `Diversion active - skipping opponent turn (${diversionTurnsLeft.value} turns left)`
-      );
-      diversionTurnsLeft.value--;
-      // 不切换玩家，让同一玩家继续
-      if (mode.value === "professional") {
-        updateForbiddenMoves();
-      }
-      return true;
-    }
-
-    currentPlayer.value = currentPlayer.value === "black" ? "white" : "black";
-
-    if (skipNextTurn.value === currentPlayer.value) {
-      console.log(`${currentPlayer.value} skips turn due to Still Water`);
-      skipNextTurn.value = null;
-      currentPlayer.value = currentPlayer.value === "black" ? "white" : "black";
-    }
-
-    // 减少飞沙走石禁用计数
-    if (flySandBanned.value.black > 0) {
-      flySandBanned.value.black--;
-    }
-    if (flySandBanned.value.white > 0) {
-      flySandBanned.value.white--;
-    }
-
-    if (mode.value === "professional") {
+    console.log(`Diversion active - ${currentPlayer.value} skips turn (${diversionTurnsLeft.value} turns left)`);
+    diversionTurnsLeft.value--;
+    // 不切换玩家，让同一玩家继续
+    if (mode.value === 'professional') {
       updateForbiddenMoves();
     }
-
     return true;
-  };
+  }
+
+    currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
+  
+  // 处理静如止水效果
+  if (skipNextTurn.value === currentPlayer.value) {
+    console.log(`${currentPlayer.value} skips turn due to Still Water`);
+    skipNextTurn.value = null;
+    currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
+  }
+
+    // 修正：减少飞沙走石禁用计数 - 只在当前玩家的回合减少该玩家的计数
+  if (currentPlayer.value === 'black' && flySandBanned.value.black > 0) {
+    flySandBanned.value.black--;
+    console.log(`Black fly-sand ban decreased: ${flySandBanned.value.black} turns left`);
+  }
+  if (currentPlayer.value === 'white' && flySandBanned.value.white > 0) {
+    flySandBanned.value.white--;
+    console.log(`White fly-sand ban decreased: ${flySandBanned.value.white} turns left`);
+  }
+  
+  if (mode.value === 'professional') {
+    updateForbiddenMoves();
+  }
+  
+  return true;
+};
 
   const swapPlayers = () => {
     if (
