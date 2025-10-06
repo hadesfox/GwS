@@ -39,6 +39,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
+const manaDotsArray = computed(() => {
+  return Array.from({ length: 30 }, (_, i) => i < (props.mana?.current || 0));
+});
+
 const windowWidth = ref(window.innerWidth);
 const hoverRow = ref<number | null>(null);
 
@@ -166,18 +170,24 @@ onUnmounted(() => {
       </div>
       
       <div v-if="mana" class="mana-display">
-        <div class="mana-info">
-          <span class="mana-label">💎</span>
+        <div class="mana-header">
+          <span class="mana-label">💎 法力值</span>
           <span class="mana-count">{{ mana.current }}/{{ mana.max }}</span>
         </div>
-        <div class="mana-mini-bar">
+        <div class="mana-dots-container">
           <div 
-            class="mana-fill" 
-            :style="{ width: (mana.current / mana.max * 100) + '%' }"
-          ></div>
+            v-for="(isActive, index) in manaDotsArray" 
+            :key="index"
+            class="mana-dot"
+            :class="{ 
+              'active': isActive,
+              'special': (index + 1) % 10 === 0
+            }"
+          >
+          </div>
         </div>
         <div v-if="stepsToNextMana > 0" class="mana-hint">
-          再走{{ stepsToNextMana }}步+1
+          再走{{ stepsToNextMana }}步获得法力
         </div>
       </div>
     </div>
@@ -323,8 +333,20 @@ onUnmounted(() => {
 .mana-display {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 100px;
+  gap: 6px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 2px solid #444;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  min-width: 180px;
+}
+
+.mana-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
 }
 
 .mana-info {
@@ -335,14 +357,73 @@ onUnmounted(() => {
 }
 
 .mana-label {
-  font-size: 14px;
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 0.5px;
 }
 
 .mana-count {
   color: #00d4ff;
   font-weight: bold;
-  font-size: 13px;
+  font-size: 12px;
 }
+
+.mana-dots-container {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  border: 1px solid #333;
+}
+
+.mana-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2a2a3e;
+  border: 1px solid #444;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mana-dot.active {
+  background: linear-gradient(135deg, #00d4ff, #0096ff);
+  border-color: #00f4ff;
+  box-shadow: 
+    0 0 6px rgba(0, 212, 255, 0.6),
+    inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  animation: dotGlow 0.3s ease-out;
+}
+
+.mana-dot.special {
+  border: 2px solid #666;
+}
+
+.mana-dot.active.special {
+  border-color: #ffd700;
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  box-shadow: 
+    0 0 8px rgba(255, 215, 0, 0.8),
+    inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+@keyframes dotGlow {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 
 .mana-mini-bar {
   height: 6px;
@@ -361,7 +442,8 @@ onUnmounted(() => {
 .mana-hint {
   font-size: 10px;
   color: #aaa;
-  text-align: right;
+  text-align: center;
+  margin-top: 2px;
 }
 
 .board-wrapper {
