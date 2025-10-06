@@ -39,6 +39,9 @@ export function useGobang() {
     moveCounter: 0,
   });
 
+  // 在状态变量部分添加
+  const manaGrowthMode = ref<"default" | "alternate">("default"); // 'default' 是现有模式，'alternate' 是新模式
+
   const whiteMana = ref<ManaState>({
     current: 0,
     max: MAX_MANA,
@@ -76,19 +79,49 @@ export function useGobang() {
   });
 
   // 基于总步数更新法力值
+  // 修改 updateManaByTotalMoves 函数
   const updateManaByTotalMoves = () => {
     const totalMoves = moveHistory.value.length;
-    const remainder = totalMoves % 4;
 
-    if (remainder === 3) {
-      if (blackMana.value.current < blackMana.value.max) {
-        blackMana.value.current++;
+    if (manaGrowthMode.value === "default") {
+      // 现有模式：每4步为一轮，第3步黑方+1，第4步白方+1
+      const remainder = totalMoves % 4;
+
+      if (remainder === 3) {
+        if (blackMana.value.current < blackMana.value.max) {
+          blackMana.value.current++;
+        }
+      } else if (remainder === 0 && totalMoves > 0) {
+        if (whiteMana.value.current < whiteMana.value.max) {
+          whiteMana.value.current++;
+        }
       }
-    } else if (remainder === 0 && totalMoves > 0) {
-      if (whiteMana.value.current < whiteMana.value.max) {
-        whiteMana.value.current++;
+    } else {
+      // 新模式：(步数-1)/2，余数为1则黑方+1，余数为0则白方+1
+      if (totalMoves > 0) {
+        const divided = (totalMoves - 1) / 2;
+        const remainder = (totalMoves - 1) % 2;
+
+        if (remainder === 1) {
+          // 黑方获得法力
+          if (blackMana.value.current < blackMana.value.max) {
+            blackMana.value.current++;
+          }
+        } else if (remainder === 0) {
+          // 白方获得法力
+          if (whiteMana.value.current < whiteMana.value.max) {
+            whiteMana.value.current++;
+          }
+        }
       }
     }
+  };
+
+  // 添加切换模式的函数
+  const toggleManaGrowthMode = () => {
+    manaGrowthMode.value =
+      manaGrowthMode.value === "default" ? "alternate" : "default";
+    console.log(`Mana growth mode switched to: ${manaGrowthMode.value}`);
   };
 
   // 随机摆放棋子的辅助函数
@@ -892,37 +925,43 @@ export function useGobang() {
     }
 
     // 处理调呈离山效果
-  if (diversionTurnsLeft.value > 0) {
-    console.log(`Diversion active - ${currentPlayer.value} skips turn (${diversionTurnsLeft.value} turns left)`);
-    diversionTurnsLeft.value--;
-    if (mode.value === 'professional') {
-      updateForbiddenMoves();
+    if (diversionTurnsLeft.value > 0) {
+      console.log(
+        `Diversion active - ${currentPlayer.value} skips turn (${diversionTurnsLeft.value} turns left)`
+      );
+      diversionTurnsLeft.value--;
+      if (mode.value === "professional") {
+        updateForbiddenMoves();
+      }
+      return true;
     }
-    return true;
-  }
 
     // 在切换玩家之前，减少当前玩家的禁用计数
-  if (currentPlayer.value === 'black' && flySandBanned.value.black > 0) {
-    flySandBanned.value.black--;
-    console.log(`Black fly-sand ban decreased: ${flySandBanned.value.black} turns left`);
-  }
-  if (currentPlayer.value === 'white' && flySandBanned.value.white > 0) {
-    flySandBanned.value.white--;
-    console.log(`White fly-sand ban decreased: ${flySandBanned.value.white} turns left`);
-  }
+    if (currentPlayer.value === "black" && flySandBanned.value.black > 0) {
+      flySandBanned.value.black--;
+      console.log(
+        `Black fly-sand ban decreased: ${flySandBanned.value.black} turns left`
+      );
+    }
+    if (currentPlayer.value === "white" && flySandBanned.value.white > 0) {
+      flySandBanned.value.white--;
+      console.log(
+        `White fly-sand ban decreased: ${flySandBanned.value.white} turns left`
+      );
+    }
 
-    currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
+    currentPlayer.value = currentPlayer.value === "black" ? "white" : "black";
 
     // 处理静如止水效果
-  if (skipNextTurn.value === currentPlayer.value) {
-    console.log(`${currentPlayer.value} skips turn due to Still Water`);
-    skipNextTurn.value = null;
-    currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
-  }
-  
-  if (mode.value === 'professional') {
-    updateForbiddenMoves();
-  }
+    if (skipNextTurn.value === currentPlayer.value) {
+      console.log(`${currentPlayer.value} skips turn due to Still Water`);
+      skipNextTurn.value = null;
+      currentPlayer.value = currentPlayer.value === "black" ? "white" : "black";
+    }
+
+    if (mode.value === "professional") {
+      updateForbiddenMoves();
+    }
     // 修正：减少飞沙走石禁用计数 - 每个完整回合（黑白各走一次）减1
     // 当白方走完后（即将切换到黑方时），减少计数
     if (currentPlayer.value === "black") {
@@ -1074,12 +1113,12 @@ export function useGobang() {
     diversionTurnsLeft.value = 0;
 
     reverseEffect.value = {
-    targetPlayer: null,
-    casterPlayer: null,
-    casterLocked: false,
-    casterCanMove: 0,
-    showProgressBar: false
-  };
+      targetPlayer: null,
+      casterPlayer: null,
+      casterLocked: false,
+      casterCanMove: 0,
+      showProgressBar: false,
+    };
 
     if (mode.value === "professional") {
       const centerPos = Math.floor(BOARD_SIZE / 2);
@@ -1142,6 +1181,8 @@ export function useGobang() {
     diversionTurnsLeft, // 新增
     lastRemovedPiece,
     reverseEffect,
+    manaGrowthMode,
+    toggleManaGrowthMode,
     makeMove,
     undo,
     restart,

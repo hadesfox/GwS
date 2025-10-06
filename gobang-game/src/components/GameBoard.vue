@@ -18,6 +18,7 @@ interface Props {
   skillState?: SkillState;
   mana?: ManaState;
   totalMoves?: number;
+  manaGrowthMode?: 'default' | 'alternate';  // 新增
 }
 
 interface Emits {
@@ -34,7 +35,8 @@ const props = withDefaults(defineProps<Props>(), {
   hasSwapped: false,
   mode: 'basic',
   skillState: () => ({ isSelecting: false, skillType: null, player: null }),
-  totalMoves: 0
+  totalMoves: 0,
+  manaGrowthMode: 'default'  // 新增
 });
 
 const emit = defineEmits<Emits>();
@@ -129,18 +131,33 @@ const isValidSkillTarget = (row: number, col: number) => {
 
 const stepsToNextMana = computed(() => {
   if (!props.mana || !props.totalMoves) return 0;
-  const remainder = props.totalMoves % 4;
   
-  if (props.playerSide === 'black') {
-    if (remainder === 0) return 3;
-    if (remainder === 1) return 2;
-    if (remainder === 2) return 1;
-    return 0;
+  if (props.manaGrowthMode === 'default') {
+    // 标准模式：每4步
+    const remainder = props.totalMoves % 4;
+    
+    if (props.playerSide === 'black') {
+      if (remainder === 0) return 3;
+      if (remainder === 1) return 2;
+      if (remainder === 2) return 1;
+      return 0;
+    } else {
+      if (remainder === 1) return 3;
+      if (remainder === 2) return 2;
+      if (remainder === 3) return 1;
+      return 0;
+    }
   } else {
-    if (remainder === 1) return 3;
-    if (remainder === 2) return 2;
-    if (remainder === 3) return 1;
-    return 0;
+    // 快速模式：每2步
+    const remainder = (props.totalMoves - 1) % 2;
+    
+    if (props.playerSide === 'black') {
+      // 黑方在余数为1时获得法力
+      return remainder === 0 ? 1 : 0;
+    } else {
+      // 白方在余数为0时获得法力
+      return remainder === 1 ? 1 : 0;
+    }
   }
 });
 

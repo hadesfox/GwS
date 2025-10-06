@@ -19,6 +19,8 @@ const {
   lastMove,
   mode,
   professionalPhase,
+  manaGrowthMode,
+  toggleManaGrowthMode,
   lastRemovedPiece,
   fiveOffers,
   forbiddenMoves,
@@ -242,6 +244,15 @@ watch(counterWindowOpen, (isOpen) => {
         {{ getDecisionHintText }}
       </div>
 
+      <!-- 法力值增长模式切换按钮 - 左下角 -->
+      <button class="mana-mode-toggle" @click="toggleManaGrowthMode">
+        <div class="toggle-icon">{{ manaGrowthMode === 'default' ? '🔄' : '⚡' }}</div>
+        <div class="toggle-text">
+          <div class="toggle-title">法力模式</div>
+          <div class="toggle-mode">{{ manaGrowthMode === 'default' ? '标准(4步)' : '快速(2步)' }}</div>
+        </div>
+      </button>
+
       <GameInfo
         :current-player="currentPlayer"
         :winner="winner"
@@ -316,23 +327,24 @@ watch(counterWindowOpen, (isOpen) => {
               </div>
               
               <GameBoard
-                :board="board"
-                :is-game-over="isGameOver"
-                :last-move="lastMove"
-                :forbidden-moves="forbiddenMoves"
-                :five-offers="fiveOffers"
-                :current-player="currentPlayer"
-                :player-side="'black'"
-                :professional-phase="professionalPhase"
-                :move-count="moveHistory.length"
-                :has-swapped="hasSwapped"
-                :mode="mode"
-                :skill-state="skillState"
-                :mana="blackMana"
-                :total-moves="moveHistory.length"
-                @make-move="makeMove"
-                @execute-skill="handleExecuteSkill"
-              />
+    :board="board"
+    :is-game-over="isGameOver"
+    :last-move="lastMove"
+    :forbidden-moves="forbiddenMoves"
+    :five-offers="fiveOffers"
+    :current-player="currentPlayer"
+    :player-side="'black'"
+    :professional-phase="professionalPhase"
+    :move-count="moveHistory.length"
+    :has-swapped="hasSwapped"
+    :mode="mode"
+    :skill-state="skillState"
+    :mana="blackMana"
+    :total-moves="moveHistory.length"
+    :mana-growth-mode="manaGrowthMode"
+    @make-move="makeMove"
+    @execute-skill="handleExecuteSkill"
+  />
             </div>
 
             <!-- 白方棋盘 -->
@@ -366,23 +378,24 @@ watch(counterWindowOpen, (isOpen) => {
               </div>
               
               <GameBoard
-                :board="board"
-                :is-game-over="isGameOver"
-                :last-move="lastMove"
-                :forbidden-moves="forbiddenMoves"
-                :five-offers="fiveOffers"
-                :current-player="currentPlayer"
-                :player-side="'white'"
-                :professional-phase="professionalPhase"
-                :move-count="moveHistory.length"
-                :has-swapped="hasSwapped"
-                :mode="mode"
-                :skill-state="skillState"
-                :mana="whiteMana"
-                :total-moves="moveHistory.length"
-                @make-move="makeMove"
-                @execute-skill="handleExecuteSkill"
-              />
+    :board="board"
+    :is-game-over="isGameOver"
+    :last-move="lastMove"
+    :forbidden-moves="forbiddenMoves"
+    :five-offers="fiveOffers"
+    :current-player="currentPlayer"
+    :player-side="'white'"
+    :professional-phase="professionalPhase"
+    :move-count="moveHistory.length"
+    :has-swapped="hasSwapped"
+    :mode="mode"
+    :skill-state="skillState"
+    :mana="whiteMana"
+    :total-moves="moveHistory.length"
+    :mana-growth-mode="manaGrowthMode"
+    @make-move="makeMove"
+    @execute-skill="handleExecuteSkill"
+  />
             </div>
           </div>
         </div>
@@ -418,7 +431,7 @@ watch(counterWindowOpen, (isOpen) => {
     </main>
 
     <footer class="footer">
-      <p>狐漠离使用 Claude 辅助 Vue 3 + TypeScript + Vite 构建</p>
+      <p>使用 Vue 3 + TypeScript + Vite 构建</p>
     </footer>
   </div>
 </template>
@@ -1051,6 +1064,95 @@ watch(counterWindowOpen, (isOpen) => {
   
   .player-section {
     flex-direction: column;
+  }
+}
+
+/* 添加法力值模式切换按钮样式 */
+.mana-mode-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+}
+
+.mana-mode-toggle:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.mana-mode-toggle:active {
+  transform: translateY(-1px);
+}
+
+.toggle-icon {
+  font-size: 28px;
+  animation: rotateIcon 2s ease-in-out infinite;
+}
+
+@keyframes rotateIcon {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: white;
+}
+
+.toggle-title {
+  font-size: 11px;
+  font-weight: bold;
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+}
+
+.toggle-mode {
+  font-size: 13px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .mana-mode-toggle {
+    bottom: 15px;
+    left: 15px;
+    padding: 10px 12px;
+  }
+  
+  .toggle-icon {
+    font-size: 24px;
+  }
+  
+  .toggle-title {
+    font-size: 10px;
+  }
+  
+  .toggle-mode {
+    font-size: 11px;
   }
 }
 </style>
