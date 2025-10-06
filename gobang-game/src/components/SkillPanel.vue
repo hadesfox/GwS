@@ -7,7 +7,6 @@ interface Props {
   playerSide: 'black' | 'white';
   disabled?: boolean;
   flySandBanned?: number;
-  skipNextTurn?: 'black' | 'white' | null;
 }
 
 interface Emits {
@@ -16,8 +15,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
-  flySandBanned: 0,
-  skipNextTurn: null
+  flySandBanned: 0
 });
 
 const emit = defineEmits<Emits>();
@@ -26,13 +24,7 @@ const canUseSkill = (skillId: SkillType, manaCost: number) => {
   if (props.disabled) return false;
   if (props.mana.current < manaCost) return false;
   
-  // 检查飞沙走石是否被禁用
   if (skillId === 'fly-sand' && props.flySandBanned > 0) {
-    return false;
-  }
-  
-  // 检查水滴石穿是否可用（只有静如止水生效时才能用）
-  if (skillId === 'water-drop' && !props.skipNextTurn) {
     return false;
   }
   
@@ -49,9 +41,6 @@ const getSkillStatus = (skillId: SkillType) => {
   if (skillId === 'fly-sand' && props.flySandBanned > 0) {
     return `被禁用 (剩余${props.flySandBanned}回合)`;
   }
-  if (skillId === 'water-drop' && !props.skipNextTurn) {
-    return '静如止水未生效';
-  }
   return '';
 };
 </script>
@@ -62,7 +51,7 @@ const getSkillStatus = (skillId: SkillType) => {
       <span class="skill-icon">⚡</span>
       <span class="skill-title">技能</span>
     </div>
-    <div class="skill-grid">
+    <div class="skill-list">
       <button
         v-for="skill in SKILLS"
         :key="skill.id"
@@ -70,28 +59,25 @@ const getSkillStatus = (skillId: SkillType) => {
         :class="{ 
           'skill-available': canUseSkill(skill.id, skill.manaCost),
           'skill-locked': !canUseSkill(skill.id, skill.manaCost),
-          'skill-banned': skill.id === 'fly-sand' && flySandBanned > 0,
-          'skill-conditional-ban': skill.id === 'water-drop' && !skipNextTurn && mana.current >= skill.manaCost
+          'skill-banned': skill.id === 'fly-sand' && flySandBanned > 0
         }"
         :disabled="!canUseSkill(skill.id, skill.manaCost)"
         @click="handleSkillClick(skill.id, skill.manaCost)"
         :title="skill.description"
       >
         <div class="skill-icon-large">{{ skill.icon }}</div>
-        <div class="skill-name">{{ skill.name }}</div>
-        <div class="skill-cost">
-          <span class="cost-icon">💎</span>
-          <span>{{ skill.manaCost }}</span>
+        <div class="skill-info">
+          <div class="skill-name">{{ skill.name }}</div>
+          <div class="skill-cost">
+            <span class="cost-icon">💎</span>
+            <span>{{ skill.manaCost }}</span>
+          </div>
         </div>
         <div v-if="!canUseSkill(skill.id, skill.manaCost)" class="skill-overlay">
           <span v-if="skill.id === 'fly-sand' && flySandBanned > 0" class="ban-icon">✊</span>
-          <span v-else-if="skill.id === 'water-drop' && !skipNextTurn && mana.current >= skill.manaCost" class="ban-icon">🚫</span>
           <span v-else class="lock-icon">🔒</span>
           <div v-if="skill.id === 'fly-sand' && flySandBanned > 0" class="ban-text">
             剩余{{ flySandBanned }}回合
-          </div>
-          <div v-else-if="skill.id === 'water-drop' && !skipNextTurn && mana.current >= skill.manaCost" class="ban-text">
-            条件不满足
           </div>
         </div>
       </button>
@@ -102,12 +88,11 @@ const getSkillStatus = (skillId: SkillType) => {
 <style scoped>
 .skill-panel {
   background: linear-gradient(135deg, #2a2a3e, #1e1e2e);
-  border-radius: 12px;
-  padding: 15px;
+  border-radius: 10px;
+  padding: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  max-height: 600px;
+  overflow-y: auto;
 }
 
 .skill-panel-black {
@@ -121,61 +106,48 @@ const getSkillStatus = (skillId: SkillType) => {
 .skill-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
 }
 
 .skill-header .skill-icon {
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .skill-title {
   color: #ffd700;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 14px;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
-.skill-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  overflow-y: auto;
-  flex: 1;
-  padding-right: 5px;
-}
-
-/* 当技能数量较多时，自动分成两列 */
-@media (min-height: 800px) {
-  .skill-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    grid-auto-flow: column;
-    grid-template-rows: repeat(6, auto);
-  }
+.skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .skill-btn {
   position: relative;
   background: linear-gradient(135deg, #3a3a4e, #2a2a3e);
   border: 2px solid #444;
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 8px;
+  padding: 8px;
   cursor: pointer;
   transition: all 0.3s;
-  display: grid;
-  grid-template-columns: 40px 1fr 50px;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   overflow: hidden;
+  min-height: 50px;
 }
 
 .skill-btn:hover:not(:disabled) {
-  transform: translateX(5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateX(3px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .skill-available {
@@ -185,7 +157,7 @@ const getSkillStatus = (skillId: SkillType) => {
 
 .skill-available:hover {
   border-color: #00f4ff;
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
 }
 
 .skill-locked {
@@ -199,20 +171,23 @@ const getSkillStatus = (skillId: SkillType) => {
   opacity: 0.6;
 }
 
-.skill-conditional-ban {
-  border-color: #d32f2f;
-  background: linear-gradient(135deg, #5a1a1a, #3a1a2a);
-  opacity: 0.7;
+.skill-icon-large {
+  font-size: 28px;
+  text-align: center;
+  flex-shrink: 0;
+  width: 35px;
 }
 
-.skill-icon-large {
-  font-size: 32px;
-  text-align: center;
+.skill-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .skill-name {
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: bold;
   text-align: left;
 }
@@ -220,15 +195,14 @@ const getSkillStatus = (skillId: SkillType) => {
 .skill-cost {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  gap: 3px;
   color: #00d4ff;
   font-weight: bold;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .cost-icon {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .skill-overlay {
@@ -242,48 +216,48 @@ const getSkillStatus = (skillId: SkillType) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  gap: 5px;
+  border-radius: 6px;
+  gap: 4px;
 }
 
 .lock-icon {
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .ban-icon {
-  font-size: 32px;
+  font-size: 26px;
   animation: shake 0.5s infinite;
 }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
 }
 
 .ban-text {
   color: #ff5252;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: bold;
   text-align: center;
 }
 
-/* 自定义滚动条 */
-.skill-grid::-webkit-scrollbar {
+/* 滚动条样式 */
+.skill-panel::-webkit-scrollbar {
   width: 6px;
 }
 
-.skill-grid::-webkit-scrollbar-track {
+.skill-panel::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 3px;
 }
 
-.skill-grid::-webkit-scrollbar-thumb {
+.skill-panel::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
 }
 
-.skill-grid::-webkit-scrollbar-thumb:hover {
+.skill-panel::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 </style>

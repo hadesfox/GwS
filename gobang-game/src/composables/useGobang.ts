@@ -386,14 +386,27 @@ export function useGobang() {
 
       case "reverse": {
         const opponent = player === "black" ? "white" : "black";
+
+        // 锁定施法者3秒
         reverseEffect.value = {
           targetPlayer: opponent,
-          turnsLeft: 2,
-          progress: 0,
+          casterPlayer: player,
+          casterLocked: true,
+          casterCanMove: 0,
+          showProgressBar: true,
         };
+
         mana.value.current -= skill.manaCost;
+
+        // 3秒后解锁，允许连下两步
+        setTimeout(() => {
+          reverseEffect.value.casterLocked = false;
+          reverseEffect.value.casterCanMove = 2;
+          console.log(`${player} unlocked - can make 2 consecutive moves`);
+        }, 3000);
+
         console.log(
-          `${player} used Reverse - ${opponent} will see fake loading screen for 2 turns`
+          `${player} used Reverse - locked for 3 seconds, then can move twice`
         );
         return true;
       }
@@ -726,6 +739,15 @@ export function useGobang() {
       return false;
     }
 
+    // 检查是否被两极反转锁定
+    if (
+      reverseEffect.value.casterLocked &&
+      currentPlayer.value === reverseEffect.value.casterPlayer
+    ) {
+      console.log(`${currentPlayer.value} is locked by Reverse effect`);
+      return false;
+    }
+
     if (
       mode.value === "professional" &&
       professionalPhase.value === "five-offer"
@@ -810,63 +832,97 @@ export function useGobang() {
       }
     }
 
-    // 在玩家切换之前，更新两极反转效果
-    if (reverseEffect.value.targetPlayer && reverseEffect.value.turnsLeft > 0) {
-      // 如果当前玩家是被干扰的目标，则减少剩余回合数
-      if (currentPlayer.value === reverseEffect.value.targetPlayer) {
-        reverseEffect.value.turnsLeft--;
-        // 更新进度（从0缓慢增长到100）
-        if (reverseEffect.value.turnsLeft === 1) {
-          reverseEffect.value.progress = 45; // 第一回合后进度到45%
-        } else if (reverseEffect.value.turnsLeft === 0) {
-          reverseEffect.value.progress = 100; // 第二回合后完成
-          // 延迟清除效果
-          setTimeout(() => {
-            reverseEffect.value.targetPlayer = null;
-          }, 1000);
-        }
-        console.log(
-          `Reverse effect on ${currentPlayer.value}: ${reverseEffect.value.turnsLeft} turns left, progress: ${reverseEffect.value.progress}%`
-        );
-      }
-    }
-
-    // 处理调虎离山效果
-    if (diversionTurnsLeft.value > 0) {
+    // 处理两极反转的连续下棋
+    if (
+      reverseEffect.value.casterCanMove > 0 &&
+      currentPlayer.value === reverseEffect.value.casterPlayer
+    ) {
+      reverseEffect.value.casterCanMove--;
       console.log(
-        `Diversion active - ${currentPlayer.value} skips turn (${diversionTurnsLeft.value} turns left)`
+        `${currentPlayer.value} can make ${reverseEffect.value.casterCanMove} more consecutive moves`
       );
-      diversionTurnsLeft.value--;
-      // 不切换玩家，让同一玩家继续
-      if (mode.value === "professional") {
-        updateForbiddenMoves();
+
+      // 如果用完了连续下棋的机会，切换玩家并清除进度条
+      if (reverseEffect.value.casterCanMove === 0) {
+        reverseEffect.value.showProgressBar = false;
+        reverseEffect.value.targetPlayer = null;
+        reverseEffect.value.casterPlayer = null;
+
+        currentPlayer.value =
+          currentPlayer.value === "black" ? "white" : "black";
+
+        if (skipNextTurn.value === currentPlayer.value) {
+          console.log(`${currentPlayer.value} skips turn due to Still Water`);
+          skipNextTurn.value = null;
+          currentPlayer.value =
+            currentPlayer.value === "black" ? "white" : "black";
+        }
       }
+      // 否则不切换玩家，继续让同一玩家下棋
+
+      // 专业模式的特殊阶段处理
+      if (mode.value === "professional") {
+        if (moveHistory.value.length === 2) {
+          currentPlayer.value = "black";
+          updateForbiddenMoves();
+          return true;
+        } else if (moveHistory.value.length === 3) {
+          professionalPhase.value = "three-swap";
+          currentPlayer.value = "white";
+          updateForbiddenMoves();
+          return true;
+        } else if (
+          moveHistory.value.length === 4 &&
+          professionalPhase.value === "three-swap"
+        ) {
+          professionalPhase.value = "normal";
+        } else if (
+          moveHistory.value.length === 4 &&
+          professionalPhase.value === "normal"
+        ) {
+          professionalPhase.value = "five-offer";
+          currentPlayer.value = hasSwapped.value ? "white" : "black";
+          fiveOffers.value = [];
+          updateForbiddenMoves();
+          return true;
+        }
+      }
+
       return true;
     }
 
-    // 修正：在切换玩家之前，减少当前玩家（刚刚行动的玩家）的禁用计数
-    if (currentPlayer.value === "black" && flySandBanned.value.black > 0) {
-      flySandBanned.value.black--;
-      console.log(
-        `Black fly-sand ban decreased: ${flySandBanned.value.black} turns left`
-      );
+    // 处理调呈离山效果
+  if (diversionTurnsLeft.value > 0) {
+    console.log(`Diversion active - ${currentPlayer.value} skips turn (${diversionTurnsLeft.value} turns left)`);
+    diversionTurnsLeft.value--;
+    if (mode.value === 'professional') {
+      updateForbiddenMoves();
     }
-    if (currentPlayer.value === "white" && flySandBanned.value.white > 0) {
-      flySandBanned.value.white--;
-      console.log(
-        `White fly-sand ban decreased: ${flySandBanned.value.white} turns left`
-      );
-    }
+    return true;
+  }
 
-    currentPlayer.value = currentPlayer.value === "black" ? "white" : "black";
+    // 在切换玩家之前，减少当前玩家的禁用计数
+  if (currentPlayer.value === 'black' && flySandBanned.value.black > 0) {
+    flySandBanned.value.black--;
+    console.log(`Black fly-sand ban decreased: ${flySandBanned.value.black} turns left`);
+  }
+  if (currentPlayer.value === 'white' && flySandBanned.value.white > 0) {
+    flySandBanned.value.white--;
+    console.log(`White fly-sand ban decreased: ${flySandBanned.value.white} turns left`);
+  }
+
+    currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
 
     // 处理静如止水效果
-    if (skipNextTurn.value === currentPlayer.value) {
-      console.log(`${currentPlayer.value} skips turn due to Still Water`);
-      skipNextTurn.value = null;
-      currentPlayer.value = currentPlayer.value === "black" ? "white" : "black";
-    }
-
+  if (skipNextTurn.value === currentPlayer.value) {
+    console.log(`${currentPlayer.value} skips turn due to Still Water`);
+    skipNextTurn.value = null;
+    currentPlayer.value = currentPlayer.value === 'black' ? 'white' : 'black';
+  }
+  
+  if (mode.value === 'professional') {
+    updateForbiddenMoves();
+  }
     // 修正：减少飞沙走石禁用计数 - 每个完整回合（黑白各走一次）减1
     // 当白方走完后（即将切换到黑方时），减少计数
     if (currentPlayer.value === "black") {
@@ -1018,10 +1074,12 @@ export function useGobang() {
     diversionTurnsLeft.value = 0;
 
     reverseEffect.value = {
-      targetPlayer: null,
-      turnsLeft: 0,
-      progress: 0,
-    };
+    targetPlayer: null,
+    casterPlayer: null,
+    casterLocked: false,
+    casterCanMove: 0,
+    showProgressBar: false
+  };
 
     if (mode.value === "professional") {
       const centerPos = Math.floor(BOARD_SIZE / 2);
@@ -1045,14 +1103,19 @@ export function useGobang() {
     whiteMana: whiteMana.value,
   }));
 
+  // 修改两极反转相关状态
   const reverseEffect = ref<{
     targetPlayer: "black" | "white" | null;
-    turnsLeft: number;
-    progress: number;
+    casterPlayer: "black" | "white" | null;
+    casterLocked: boolean;
+    casterCanMove: number; // 可以连下的步数
+    showProgressBar: boolean;
   }>({
     targetPlayer: null,
-    turnsLeft: 0,
-    progress: 0,
+    casterPlayer: null,
+    casterLocked: false,
+    casterCanMove: 0,
+    showProgressBar: false,
   });
 
   return {

@@ -166,7 +166,7 @@ watch(counterWindowOpen, (isOpen) => {
   
   <div v-else class="app">
     <header class="header" @click="handleTitleClick">
-      <h1>技能五子棋</h1>
+      <h1>五子棋游戏</h1>
       <p>
         <span v-if="mode === 'basic'">基础模式</span>
         <span v-else>专业模式（连珠）</span>
@@ -175,53 +175,47 @@ watch(counterWindowOpen, (isOpen) => {
 
     <main class="main">
       <!-- 反制窗口提示 -->
-      <div
-        v-if="counterWindowOpen && counterWindowPlayer"
-        class="counter-window"
-      >
+      <div v-if="counterWindowOpen && counterWindowPlayer" class="counter-window">
         <div class="counter-content">
           <div class="counter-icon">⚠️</div>
           <div class="counter-text">
             <h3>力拔山兮即将发动!</h3>
-            <p>
-              {{
-                counterWindowPlayer === "black" ? "黑方" : "白方"
-              }}可以使用"东山再起"反制
-            </p>
+            <p>{{ counterWindowPlayer === 'black' ? '黑方' : '白方' }}可以使用"东山再起"反制</p>
             <p v-if="canCounter" class="counter-timer">还有时间反制...</p>
             <p v-else class="no-mana-warning">⚠️ 法力值不足，无力反制</p>
           </div>
           <div class="counter-buttons">
-            <button
+            <button 
               v-if="canCounter"
-              class="counter-skill-btn"
+              class="counter-skill-btn" 
               @click="handleCounterSkill"
             >
               <span class="btn-icon">🔄</span>
               <span>使用东山再起</span>
               <span class="btn-cost">消耗 13 💎</span>
             </button>
-            <button v-else class="counter-close-btn disabled" disabled>
+            <button 
+              v-else
+              class="counter-close-btn disabled" 
+              disabled
+            >
               <span class="btn-icon">🔒</span>
               <span>法力值不足</span>
             </button>
           </div>
         </div>
       </div>
-
+      
       <!-- 跳过回合提示 -->
       <div v-if="skipNextTurn" class="skip-turn-hint">
         <span class="skip-icon">💤</span>
-        {{
-          skipNextTurn === "black" ? "黑方" : "白方"
-        }}下一回合将被跳过(静如止水效果)
+        {{ skipNextTurn === 'black' ? '黑方' : '白方' }}下一回合将被跳过（静如止水效果）
       </div>
 
-      <!-- 调虎离山提示 -->
+      <!-- 调呈离山提示 -->
       <div v-if="diversionTurnsLeft > 0" class="diversion-hint">
         <span class="diversion-icon">🎯</span>
-        {{ currentPlayer === "black" ? "白方" : "黑方" }}将暂停
-        {{ diversionTurnsLeft }} 回合(调虎离山效果)
+        {{ currentPlayer === 'black' ? '白方' : '黑方' }}将暂停 {{ diversionTurnsLeft }} 回合（调呈离山效果）
       </div>
 
       <!-- 飞沙走石禁用提示 -->
@@ -234,28 +228,18 @@ watch(counterWindowOpen, (isOpen) => {
         白方禁止使用飞沙走石，剩余 {{ flySandBanned.white }} 回合
       </div>
 
-      <div v-if="showDecisionHint" class="top-hint">
-        {{ getDecisionHintText }}
+      <!-- 拾金不昧可用提示 -->
+      <div v-if="lastRemovedPiece && lastRemovedPiece.removedBy !== 'black'" class="honesty-hint black-hint">
+        <span class="honesty-icon">💰</span>
+        黑方可以使用"拾金不昧"捡回被移除的{{ lastRemovedPiece.color === 'black' ? '黑' : '白' }}棋
+      </div>
+      <div v-if="lastRemovedPiece && lastRemovedPiece.removedBy !== 'white'" class="honesty-hint white-hint">
+        <span class="honesty-icon">💰</span>
+        白方可以使用"拾金不昧"捡回被移除的{{ lastRemovedPiece.color === 'black' ? '黑' : '白' }}棋
       </div>
 
-      <!-- 拾金不昧可用提示 -->
-      <div
-        v-if="lastRemovedPiece && lastRemovedPiece.removedBy !== 'black'"
-        class="honesty-hint black-hint"
-      >
-        <span class="honesty-icon">💰</span>
-        黑方可以使用"拾金不昧"捡回被移除的{{
-          lastRemovedPiece.color === "black" ? "黑" : "白"
-        }}棋
-      </div>
-      <div
-        v-if="lastRemovedPiece && lastRemovedPiece.removedBy !== 'white'"
-        class="honesty-hint white-hint"
-      >
-        <span class="honesty-icon">💰</span>
-        白方可以使用"拾金不昧"捡回被移除的{{
-          lastRemovedPiece.color === "black" ? "黑" : "白"
-        }}棋
+      <div v-if="showDecisionHint" class="top-hint">
+        {{ getDecisionHintText }}
       </div>
 
       <GameInfo
@@ -285,14 +269,10 @@ watch(counterWindowOpen, (isOpen) => {
         </button>
       </div>
 
-      <!-- 游戏容器 -->
+      <!-- 游戏容器 - 优化布局 -->
       <div class="game-container">
-        <!-- 黑方技能区域 -->
-        <div class="side-panel left-panel">
-          <div class="player-label black-label">
-            <span class="player-icon">⚫</span>
-            <span>黑方</span>
-          </div>
+        <!-- 黑方区域 -->
+        <div class="player-section">
           <ManaBar 
             :mana="blackMana" 
             player-side="black"
@@ -301,7 +281,7 @@ watch(counterWindowOpen, (isOpen) => {
           <SkillPanel 
             :mana="blackMana" 
             player-side="black"
-            :disabled="currentPlayer !== 'black' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'black')"
+            :disabled="currentPlayer !== 'black' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'black') || (reverseEffect.casterLocked && reverseEffect.casterPlayer === 'black')"
             :fly-sand-banned="flySandBanned.black"
             @use-skill="(skillId) => handleSkillUse('black', skillId)"
           />
@@ -312,17 +292,26 @@ watch(counterWindowOpen, (isOpen) => {
           <div class="dual-board">
             <!-- 黑方棋盘 -->
             <div class="board-wrapper black-board">
-              <!-- 两极反转进度条覆盖层 - 黑方 -->
-              <div v-if="reverseEffect.targetPlayer === 'black' && reverseEffect.turnsLeft > 0" class="reverse-overlay">
+              <!-- 两极反转锁定覆盖层 - 施法者 -->
+              <div v-if="reverseEffect.casterLocked && reverseEffect.casterPlayer === 'black'" class="locked-overlay">
+                <div class="locked-container">
+                  <div class="locked-icon">🔒</div>
+                  <div class="locked-text">棋盘锁定中...</div>
+                  <div class="locked-hint">3秒后解锁并可连下2步</div>
+                </div>
+              </div>
+
+              <!-- 两极反转进度条 - 对方 -->
+              <div v-if="reverseEffect.showProgressBar && reverseEffect.targetPlayer === 'black'" class="reverse-overlay">
                 <div class="loading-container">
                   <div class="loading-icon">💾</div>
-                  <div class="loading-text">{{ getLoadingText }}</div>
+                  <div class="loading-text">正在扫描硬盘...</div>
                   <div class="progress-bar-container">
-                    <div class="progress-bar" :style="{ width: reverseEffect.progress + '%' }">
+                    <div class="progress-bar">
                       <div class="progress-shine"></div>
                     </div>
                   </div>
-                  <div class="loading-percentage">{{ Math.floor(reverseEffect.progress) }}%</div>
+                  <div class="loading-percentage">加载中...</div>
                   <div class="file-list">
                     <div class="file-item">📁 C:\Windows\System32\...</div>
                     <div class="file-item">📁 C:\Program Files\...</div>
@@ -352,17 +341,26 @@ watch(counterWindowOpen, (isOpen) => {
 
             <!-- 白方棋盘 -->
             <div class="board-wrapper white-board">
-              <!-- 两极反转进度条覆盖层 - 白方 -->
-              <div v-if="reverseEffect.targetPlayer === 'white' && reverseEffect.turnsLeft > 0" class="reverse-overlay">
+              <!-- 两极反转锁定覆盖层 - 施法者 -->
+              <div v-if="reverseEffect.casterLocked && reverseEffect.casterPlayer === 'white'" class="locked-overlay">
+                <div class="locked-container">
+                  <div class="locked-icon">🔒</div>
+                  <div class="locked-text">棋盘锁定中...</div>
+                  <div class="locked-hint">3秒后解锁并可连下2步</div>
+                </div>
+              </div>
+
+              <!-- 两极反转进度条 - 对方 -->
+              <div v-if="reverseEffect.showProgressBar && reverseEffect.targetPlayer === 'white'" class="reverse-overlay">
                 <div class="loading-container">
                   <div class="loading-icon">💾</div>
-                  <div class="loading-text">{{ getLoadingText }}</div>
+                  <div class="loading-text">正在扫描硬盘...</div>
                   <div class="progress-bar-container">
-                    <div class="progress-bar" :style="{ width: reverseEffect.progress + '%' }">
+                    <div class="progress-bar">
                       <div class="progress-shine"></div>
                     </div>
                   </div>
-                  <div class="loading-percentage">{{ Math.floor(reverseEffect.progress) }}%</div>
+                  <div class="loading-percentage">加载中...</div>
                   <div class="file-list">
                     <div class="file-item">📁 C:\Windows\System32\...</div>
                     <div class="file-item">📁 C:\Program Files\...</div>
@@ -392,12 +390,8 @@ watch(counterWindowOpen, (isOpen) => {
           </div>
         </div>
 
-        <!-- 白方技能区域 -->
-        <div class="side-panel right-panel">
-          <div class="player-label white-label">
-            <span class="player-icon">⚪</span>
-            <span>白方</span>
-          </div>
+        <!-- 白方区域 -->
+        <div class="player-section">
           <ManaBar 
             :mana="whiteMana" 
             player-side="white"
@@ -406,27 +400,29 @@ watch(counterWindowOpen, (isOpen) => {
           <SkillPanel 
             :mana="whiteMana" 
             player-side="white"
-            :disabled="currentPlayer !== 'white' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'white')"
+            :disabled="currentPlayer !== 'white' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'white') || (reverseEffect.casterLocked && reverseEffect.casterPlayer === 'white')"
             :fly-sand-banned="flySandBanned.white"
             @use-skill="(skillId) => handleSkillUse('white', skillId)"
           />
         </div>
       </div>
 
-      <GameControl :can-undo="canUndo" @undo="undo" @restart="restart" />
+      <GameControl
+        :can-undo="canUndo"
+        @undo="undo"
+        @restart="restart"
+      />
 
-      <div
-        v-if="mode === 'professional' && forbiddenMoves.length > 0"
-        class="hint-box"
-      >
+      <div v-if="mode === 'professional' && forbiddenMoves.length > 0" class="hint-box">
         <div class="hint-icon">⚠️</div>
         <div class="hint-text">
-          当前棋盘上有
-          <strong>{{ forbiddenMoves.length }}</strong> 个禁手位置(红色✕标记)
+          当前棋盘上有 <strong>{{ forbiddenMoves.length }}</strong> 个禁手位置（红色✕标记）
         </div>
       </div>
 
-      <button class="back-btn" @click="backToStart">← 返回模式选择</button>
+      <button class="back-btn" @click="backToStart">
+        ← 返回模式选择
+      </button>
     </main>
 
     <footer class="footer">
@@ -445,7 +441,7 @@ watch(counterWindowOpen, (isOpen) => {
 
 .header {
   text-align: center;
-  padding: 30px 20px;
+  padding: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -455,13 +451,13 @@ watch(counterWindowOpen, (isOpen) => {
 
 .header h1 {
   margin: 0;
-  font-size: 36px;
+  font-size: 28px;
   font-weight: bold;
 }
 
 .header p {
-  margin: 10px 0 0;
-  font-size: 16px;
+  margin: 5px 0 0;
+  font-size: 14px;
   opacity: 0.9;
 }
 
@@ -470,8 +466,8 @@ watch(counterWindowOpen, (isOpen) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
-  max-width: 1600px;
+  padding: 15px;
+  max-width: 1800px;
   margin: 0 auto;
   width: 100%;
 }
@@ -491,20 +487,16 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .counter-content {
   background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
   border-radius: 20px;
-  padding: 40px;
+  padding: 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  max-width: 500px;
+  max-width: 450px;
   text-align: center;
   color: white;
   animation: scaleIn 0.3s ease-out;
@@ -522,80 +514,68 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 .counter-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
+  font-size: 48px;
+  margin-bottom: 15px;
   animation: pulse 1s infinite;
 }
 
 @keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 .counter-text h3 {
-  margin: 0 0 15px 0;
-  font-size: 28px;
+  margin: 0 0 10px 0;
+  font-size: 22px;
 }
 
 .counter-text p {
-  margin: 10px 0;
-  font-size: 16px;
+  margin: 8px 0;
+  font-size: 14px;
   opacity: 0.9;
 }
 
 .counter-timer {
   font-weight: bold;
-  font-size: 18px;
-  margin-top: 20px;
+  font-size: 16px;
+  margin-top: 15px;
 }
 
 .no-mana-warning {
   color: #ffeb3b;
   font-weight: bold;
-  font-size: 18px;
-  margin-top: 20px;
+  font-size: 16px;
+  margin-top: 15px;
   animation: shake 0.5s;
 }
 
 @keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-10px);
-  }
-  75% {
-    transform: translateX(10px);
-  }
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
 }
 
 .counter-buttons {
-  margin-top: 30px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 }
 
 .counter-skill-btn {
-  padding: 15px 40px;
+  padding: 12px 30px;
   background: linear-gradient(135deg, #4caf50, #388e3c);
   color: white;
   border: none;
   border-radius: 25px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 .counter-skill-btn:hover {
@@ -604,19 +584,19 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 .counter-close-btn {
-  padding: 15px 40px;
+  padding: 12px 30px;
   background: white;
   color: #ff6b6b;
   border: none;
   border-radius: 25px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 .counter-close-btn.disabled {
@@ -627,70 +607,36 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 .btn-icon {
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .btn-cost {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0.9;
 }
 
-.skip-turn-hint {
-  background: linear-gradient(135deg, #9c27b0, #ba68c8);
+.skip-turn-hint, .diversion-hint, .ban-hint, .honesty-hint {
   color: white;
-  padding: 15px 30px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  animation: slideDown 0.3s ease-out;
-}
-
-.skip-icon {
-  font-size: 24px;
-}
-
-.diversion-hint {
-  background: linear-gradient(135deg, #e91e63, #f06292);
-  color: white;
-  padding: 15px 30px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  animation: slideDown 0.3s ease-out;
-}
-
-.diversion-icon {
-  font-size: 24px;
-}
-
-.ban-hint {
-  color: white;
-  padding: 12px 25px;
+  padding: 10px 20px;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
   text-align: center;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-  margin-bottom: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   animation: slideDown 0.3s ease-out;
+}
+
+.skip-turn-hint {
+  background: linear-gradient(135deg, #9c27b0, #ba68c8);
+}
+
+.diversion-hint {
+  background: linear-gradient(135deg, #e91e63, #f06292);
 }
 
 .black-ban {
@@ -701,21 +647,16 @@ watch(counterWindowOpen, (isOpen) => {
   background: linear-gradient(135deg, #9e9e9e, #bdbdbd);
 }
 
-.ban-icon {
-  font-size: 20px;
+.black-hint {
+  background: linear-gradient(135deg, #ffa726, #ff6f00);
 }
 
-.top-hint {
-  background: linear-gradient(135deg, #2196f3, #21cbf3);
-  color: white;
-  padding: 15px 30px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-  margin-bottom: 20px;
-  animation: slideDown 0.3s ease-out;
+.white-hint {
+  background: linear-gradient(135deg, #ffd54f, #ffa000);
+}
+
+.skip-icon, .diversion-icon, .ban-icon, .honesty-icon {
+  font-size: 18px;
 }
 
 @keyframes slideDown {
@@ -729,18 +670,31 @@ watch(counterWindowOpen, (isOpen) => {
   }
 }
 
+.top-hint {
+  background: linear-gradient(135deg, #2196f3, #21cbf3);
+  color: white;
+  padding: 12px 25px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(33, 150, 243, 0.3);
+  margin-bottom: 15px;
+  animation: slideDown 0.3s ease-out;
+}
+
 .cheat-container {
-  margin: 15px 0;
+  margin: 10px 0;
   text-align: center;
 }
 
 .cheat-btn {
-  padding: 10px 25px;
+  padding: 8px 20px;
   background: linear-gradient(135deg, #ff9800, #f57c00);
   color: white;
   border: none;
-  border-radius: 20px;
-  font-size: 14px;
+  border-radius: 18px;
+  font-size: 13px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
@@ -749,12 +703,8 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 @keyframes rainbow {
-  0% {
-    filter: hue-rotate(0deg);
-  }
-  100% {
-    filter: hue-rotate(360deg);
-  }
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
 }
 
 .cheat-btn:hover {
@@ -762,59 +712,27 @@ watch(counterWindowOpen, (isOpen) => {
   box-shadow: 0 6px 12px rgba(255, 152, 0, 0.4);
 }
 
+/* 优化后的游戏容器布局 */
 .game-container {
   display: flex;
-  gap: 20px;
-  align-items: stretch;
+  gap: 15px;
+  align-items: flex-start;
   width: 100%;
-  margin: 20px 0;
+  max-width: 1600px;
+  margin: 15px 0;
+  justify-content: center;
 }
 
-.side-panel {
-  flex: 0 0 280px;
+.player-section {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  min-height: 600px;
-}
-
-.left-panel {
-  align-items: flex-end;
-}
-
-.right-panel {
-  align-items: flex-start;
-}
-
-.player-label {
-  text-align: center;
-  font-size: 20px;
-  font-weight: bold;
-  padding: 12px 20px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.black-label {
-  background: linear-gradient(135deg, #333, #555);
-  color: white;
-}
-
-.white-label {
-  background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
-  color: #333;
-}
-
-.player-icon {
-  font-size: 28px;
+  width: 220px;
+  flex-shrink: 0;
 }
 
 .board-container {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   justify-content: center;
 }
@@ -822,13 +740,14 @@ watch(counterWindowOpen, (isOpen) => {
 .dual-board {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 15px;
 }
 
 .board-wrapper {
+  position: relative;
   background: white;
-  border-radius: 15px;
-  padding: 15px;
+  border-radius: 12px;
+  padding: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -840,130 +759,73 @@ watch(counterWindowOpen, (isOpen) => {
   border: 3px solid #e0e0e0;
 }
 
-.hint-box {
-  background: linear-gradient(135deg, #fff3e0, #ffebee);
-  border: 2px solid #ff9800;
-  border-radius: 12px;
-  padding: 15px 20px;
-  margin: 15px 20px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
-}
-
-.hint-icon {
-  font-size: 24px;
-}
-
-.hint-text {
-  color: #d84315;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.hint-text strong {
-  color: #c62828;
-  font-size: 16px;
-}
-
-.back-btn {
-  margin-top: 20px;
-  padding: 12px 30px;
-  background: linear-gradient(135deg, #757575, #616161);
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.back-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-}
-
-.footer {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-  font-size: 14px;
-  background: rgba(255, 255, 255, 0.5);
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-@media (max-width: 1400px) {
-  .game-container {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .side-panel {
-    width: 100%;
-    max-width: 600px;
-  }
-
-  .left-panel,
-  .right-panel {
-    align-items: center;
-  }
-
-  .dual-board {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .header h1 {
-    font-size: 28px;
-  }
-
-  .dual-board {
-    gap: 15px;
-  }
-}
-
-/* 添加拾金不昧提示样式 */
-.honesty-hint {
-  color: white;
-  padding: 12px 25px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: bold;
-  text-align: center;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-  margin-bottom: 10px;
+/* 锁定覆盖层样式 */
+.locked-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(2px);
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  animation: slideDown 0.3s ease-out;
+  border-radius: 12px;
+  animation: overlayFadeIn 0.3s ease-out;
 }
 
-.black-hint {
-  background: linear-gradient(135deg, #ffa726, #ff6f00);
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.white-hint {
-  background: linear-gradient(135deg, #ffd54f, #ffa000);
-}
-
-.honesty-icon {
-  font-size: 20px;
-}
-
-/* 添加两极反转效果样式 */
-.board-wrapper {
-  position: relative;
-  background: white;
+.locked-container {
+  background: linear-gradient(135deg, #424242, #616161);
+  border: 2px solid #888;
   border-radius: 15px;
-  padding: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  animation: containerPulse 1.5s ease-in-out infinite;
 }
 
+@keyframes containerPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.locked-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  animation: iconShake 0.5s infinite;
+}
+
+@keyframes iconShake {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+}
+
+.locked-text {
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.locked-hint {
+  color: #ffd700;
+  font-size: 14px;
+  animation: textBlink 1s infinite;
+}
+
+@keyframes textBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* 进度条覆盖层样式 */
 .reverse-overlay {
   position: absolute;
   top: 0;
@@ -976,25 +838,16 @@ watch(counterWindowOpen, (isOpen) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 15px;
+  border-radius: 12px;
   animation: overlayFadeIn 0.5s ease-out;
-}
-
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .loading-container {
   background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
   border: 2px solid #444;
   border-radius: 12px;
-  padding: 30px;
-  max-width: 400px;
+  padding: 25px;
+  max-width: 350px;
   width: 90%;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   animation: containerSlide 0.5s ease-out;
@@ -1012,44 +865,31 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 .loading-icon {
-  font-size: 48px;
+  font-size: 42px;
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   animation: iconPulse 2s infinite;
 }
 
 @keyframes iconPulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 .loading-text {
   color: #00d4ff;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   animation: textBlink 1.5s infinite;
-}
-
-@keyframes textBlink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
 }
 
 .progress-bar-container {
   background: #333;
-  border-radius: 10px;
-  height: 30px;
-  margin-bottom: 15px;
+  border-radius: 8px;
+  height: 25px;
+  margin-bottom: 12px;
   overflow: hidden;
   border: 1px solid #555;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -1057,22 +897,18 @@ watch(counterWindowOpen, (isOpen) => {
 
 .progress-bar {
   height: 100%;
+  width: 100%;
   background: linear-gradient(90deg, #00d4ff, #0096ff, #00d4ff);
   background-size: 200% 100%;
-  border-radius: 10px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px;
   position: relative;
   animation: progressGradient 2s linear infinite;
   box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 @keyframes progressGradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 100% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 .progress-shine {
@@ -1086,54 +922,40 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 @keyframes shine {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
+  0% { left: -100%; }
+  100% { left: 100%; }
 }
 
 .loading-percentage {
   color: #fff;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .file-list {
   background: #222;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 15px;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 12px;
   border: 1px solid #444;
 }
 
 .file-item {
   color: #aaa;
-  font-size: 12px;
-  padding: 4px 0;
+  font-size: 11px;
+  padding: 3px 0;
   font-family: 'Courier New', monospace;
   animation: fileScan 3s infinite;
 }
 
-.file-item:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.file-item:nth-child(2) {
-  animation-delay: 0.5s;
-}
-
-.file-item:nth-child(3) {
-  animation-delay: 1s;
-}
+.file-item:nth-child(1) { animation-delay: 0s; }
+.file-item:nth-child(2) { animation-delay: 0.5s; }
+.file-item:nth-child(3) { animation-delay: 1s; }
 
 @keyframes fileScan {
-  0%, 100% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 0.5; }
   50% {
     opacity: 1;
     color: #00d4ff;
@@ -1142,18 +964,101 @@ watch(counterWindowOpen, (isOpen) => {
 
 .loading-warning {
   color: #ff9800;
-  font-size: 13px;
+  font-size: 12px;
   text-align: center;
   font-weight: bold;
   animation: warningBlink 1s infinite;
 }
 
 @keyframes warningBlink {
-  0%, 100% {
-    opacity: 1;
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.hint-box {
+  background: linear-gradient(135deg, #fff3e0, #ffebee);
+  border: 2px solid #ff9800;
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin: 12px 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+}
+
+.hint-icon {
+  font-size: 20px;
+}
+
+.hint-text {
+  color: #d84315;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hint-text strong {
+  color: #c62828;
+  font-size: 14px;
+}
+
+.back-btn {
+  margin-top: 15px;
+  padding: 10px 25px;
+  background: linear-gradient(135deg, #757575, #616161);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+.back-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.15);
+}
+
+.footer {
+  text-align: center;
+  padding: 15px;
+  color: #666;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1500px) {
+  .game-container {
+    flex-direction: column;
+    align-items: center;
   }
-  50% {
-    opacity: 0.5;
+  
+  .player-section {
+    width: 100%;
+    max-width: 600px;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .dual-board {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 22px;
+  }
+  
+  .dual-board {
+    gap: 10px;
+  }
+  
+  .player-section {
+    flex-direction: column;
   }
 }
 </style>
