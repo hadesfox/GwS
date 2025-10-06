@@ -149,7 +149,7 @@ watch(counterWindowOpen, (isOpen) => {
 
   <div v-else class="app">
     <header class="header" @click="handleTitleClick">
-      <h1>五子棋游戏</h1>
+      <h1>技能五子棋</h1>
       <p>
         <span v-if="mode === 'basic'">基础模式</span>
         <span v-else>专业模式(连珠)</span>

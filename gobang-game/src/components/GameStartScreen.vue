@@ -11,7 +11,7 @@ const emit = defineEmits<Emits>();
 <template>
   <div class="start-screen">
     <div class="start-container">
-      <h1 class="title">🎮 五子棋游戏</h1>
+      <h1 class="title">🎮 技能五子棋</h1>
       <p class="subtitle">选择游戏模式开始</p>
       
       <div class="mode-selection">
