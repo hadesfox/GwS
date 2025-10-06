@@ -113,16 +113,16 @@ const isFiveOffer = (row: number, col: number) => {
   return props.fiveOffers?.some(pos => pos.row === row && pos.col === col) || false;
 };
 
-const isValidSkillTarget = (row: number, col: number) => {
-  if (!props.skillState?.isSelecting) return false;
-  if (props.skillState.skillType === 'fly-sand') {
-    return props.board[row][col] !== null;
-  }
-  if (props.skillState.skillType === 'cleaner') {
-    return true;
-  }
-  return false;
-};
+// const isValidSkillTarget = (row: number, col: number) => {
+//   if (!props.skillState?.isSelecting) return false;
+//   if (props.skillState.skillType === 'fly-sand') {
+//     return props.board[row][col] !== null;
+//   }
+//   if (props.skillState.skillType === 'cleaner') {
+//     return true;
+//   }
+//   return false;
+// };
 
 const updateWindowWidth = () => {
   windowWidth.value = window.innerWidth;
@@ -159,7 +159,7 @@ onUnmounted(() => {
             'forbidden': !cell && isForbidden(rowIndex, colIndex),
             'five-offer': isFiveOffer(rowIndex, colIndex),
             'not-my-turn': !canMove,
-            'skill-target': isValidSkillTarget(rowIndex, colIndex),
+            // 'skill-target': isValidSkillTarget(rowIndex, colIndex),
             'skill-mode': skillState?.isSelecting,
             'cleaner-range': isInCleanerRange(rowIndex),
             'cleaner-center': hoverRow === rowIndex && skillState?.skillType === 'cleaner'
@@ -169,9 +169,9 @@ onUnmounted(() => {
           @mouseenter="handleMouseEnter(rowIndex)"
           @mouseleave="handleMouseLeave"
         >
-          <div v-if="isValidSkillTarget(rowIndex, colIndex)" class="skill-target-indicator">
+          <!-- <div v-if="isValidSkillTarget(rowIndex, colIndex)" class="skill-target-indicator">
             🎯
-          </div>
+          </div> -->
           
           <div v-if="mode === 'professional' && !cell && isForbidden(rowIndex, colIndex)" class="forbidden-mark">
             ✕
