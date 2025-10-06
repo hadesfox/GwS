@@ -36,9 +36,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 
-const hoverRow = ref<number | null>(null);
-
 const windowWidth = ref(window.innerWidth);
+const hoverRow = ref<number | null>(null);
 
 const cellSize = computed(() => {
   const containerSize = Math.min(windowWidth.value - 40, 600);
@@ -142,52 +141,76 @@ onUnmounted(() => {
     'disabled': !canMove,
     'skill-selecting': skillState?.isSelecting && skillState.player === playerSide
   }">
-    <div 
-      class="board-grid"
-      :style="{
-        gridTemplateColumns: `repeat(${BOARD_SIZE}, ${cellSize}px)`,
-        gridTemplateRows: `repeat(${BOARD_SIZE}, ${cellSize}px)`
-      }"
-    >
-      <template v-for="(row, rowIndex) in board" :key="`row-${rowIndex}`">
-        <div
-          v-for="(cell, colIndex) in row"
-          :key="`cell-${rowIndex}-${colIndex}`"
-          class="cell"
-          :class="{ 
-            'game-over': isGameOver,
-            'forbidden': !cell && isForbidden(rowIndex, colIndex),
-            'five-offer': isFiveOffer(rowIndex, colIndex),
-            'not-my-turn': !canMove,
-            // 'skill-target': isValidSkillTarget(rowIndex, colIndex),
-            'skill-mode': skillState?.isSelecting,
-            'cleaner-range': isInCleanerRange(rowIndex),
-            'cleaner-center': hoverRow === rowIndex && skillState?.skillType === 'cleaner'
-          }"
-          :style="{ width: `${cellSize}px`, height: `${cellSize}px` }"
-          @click="handleClick(rowIndex, colIndex)"
-          @mouseenter="handleMouseEnter(rowIndex)"
-          @mouseleave="handleMouseLeave"
+    <div class="board-wrapper">
+      <!-- 顶部列号 -->
+      <div class="coord-row top-coords" :style="{ marginLeft: `${cellSize + 8}px` }">
+        <div 
+          v-for="col in BOARD_SIZE" 
+          :key="`col-${col}`"
+          class="coord-label"
+          :style="{ width: `${cellSize}px` }"
         >
-          <!-- <div v-if="isValidSkillTarget(rowIndex, colIndex)" class="skill-target-indicator">
-            🎯
-          </div> -->
-          
-          <div v-if="mode === 'professional' && !cell && isForbidden(rowIndex, colIndex)" class="forbidden-mark">
-            ✕
-          </div>
-          
-          <div v-if="mode === 'professional' && isFiveOffer(rowIndex, colIndex)" class="offer-mark">
-            {{ fiveOffers?.findIndex(pos => pos.row === rowIndex && pos.col === colIndex) + 1 }}
-          </div>
-          
-          <div 
-            v-if="cell" 
-            class="piece"
-            :class="[cell, { 'last-move': isLastMove(rowIndex, colIndex) }]"
-          />
+          {{ col }}
         </div>
-      </template>
+      </div>
+      
+      <div class="board-with-coords">
+        <!-- 左侧行号 -->
+        <div class="coord-col left-coords">
+          <div 
+            v-for="row in BOARD_SIZE" 
+            :key="`row-${row}`"
+            class="coord-label"
+            :style="{ height: `${cellSize}px` }"
+          >
+            {{ row }}
+          </div>
+        </div>
+        
+        <!-- 棋盘 -->
+        <div 
+          class="board-grid"
+          :style="{
+            gridTemplateColumns: `repeat(${BOARD_SIZE}, ${cellSize}px)`,
+            gridTemplateRows: `repeat(${BOARD_SIZE}, ${cellSize}px)`
+          }"
+        >
+          <template v-for="(row, rowIndex) in board" :key="`row-${rowIndex}`">
+            <div
+              v-for="(cell, colIndex) in row"
+              :key="`cell-${rowIndex}-${colIndex}`"
+              class="cell"
+              :class="{ 
+                'game-over': isGameOver,
+                'forbidden': !cell && isForbidden(rowIndex, colIndex),
+                'five-offer': isFiveOffer(rowIndex, colIndex),
+                'not-my-turn': !canMove,
+                'skill-mode': skillState?.isSelecting,
+                'cleaner-range': isInCleanerRange(rowIndex),
+                'cleaner-center': hoverRow === rowIndex && skillState?.skillType === 'cleaner'
+              }"
+              :style="{ width: `${cellSize}px`, height: `${cellSize}px` }"
+              @click="handleClick(rowIndex, colIndex)"
+              @mouseenter="handleMouseEnter(rowIndex)"
+              @mouseleave="handleMouseLeave"
+            >
+              <div v-if="mode === 'professional' && !cell && isForbidden(rowIndex, colIndex)" class="forbidden-mark">
+                ✕
+              </div>
+              
+              <div v-if="mode === 'professional' && isFiveOffer(rowIndex, colIndex)" class="offer-mark">
+                {{ fiveOffers?.findIndex(pos => pos.row === rowIndex && pos.col === colIndex) + 1 }}
+              </div>
+              
+              <div 
+                v-if="cell" 
+                class="piece"
+                :class="[cell, { 'last-move': isLastMove(rowIndex, colIndex) }]"
+              />
+            </div>
+          </template>
+        </div>
+      </div>
     </div>
     
     <div v-if="skillState?.isSelecting && skillState.player === playerSide" class="skill-hint">
@@ -219,8 +242,40 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.game-board.skill-selecting {
-  position: relative;
+.board-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.coord-row {
+  display: flex;
+  gap: 0;
+}
+
+.top-coords {
+  margin-bottom: 4px;
+}
+
+.coord-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: #8b4513;
+}
+
+.board-with-coords {
+  display: flex;
+  gap: 4px;
+}
+
+.coord-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-right: 4px;
 }
 
 .board-grid {
@@ -264,42 +319,15 @@ onUnmounted(() => {
   cursor: crosshair;
 }
 
-/* .cell.skill-target {
-  background-color: rgba(255, 215, 0, 0.3);
-  animation: pulseGold 1s infinite;
+.cleaner-range {
+  border: 3px solid #ff0000 !important;
+  box-sizing: border-box;
 }
 
-.cell.skill-target:hover {
-  background-color: rgba(255, 215, 0, 0.5);
+.cleaner-center {
+  border: 4px solid #ff0000 !important;
+  box-sizing: border-box;
 }
-
-@keyframes pulseGold {
-  0%, 100% {
-    box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
-  }
-  50% {
-    box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.8);
-  }
-}
-
-.skill-target-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 20px;
-  pointer-events: none;
-  animation: bounce 0.5s infinite;
-}
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-} */
 
 .forbidden-mark {
   color: #d32f2f;
@@ -405,16 +433,5 @@ onUnmounted(() => {
 
 .skill-hint-text {
   font-size: 14px;
-}
-
-/* 修改保洁上门的视觉效果 - 只用红色边框 */
-.cleaner-range {
-  border: 3px solid #ff0000 !important;
-  box-sizing: border-box;
-}
-
-.cleaner-center {
-  border: 4px solid #ff0000 !important;
-  box-sizing: border-box;
 }
 </style>

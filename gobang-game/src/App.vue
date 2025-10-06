@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import GameBoard from './components/GameBoard.vue';
-import GameInfo from './components/GameInfo.vue';
-import GameControl from './components/GameControl.vue';
-import ProfessionalPanel from './components/ProfessionalPanel.vue';
-import GameStartScreen from './components/GameStartScreen.vue';
-import ManaBar from './components/ManaBar.vue';
-import SkillPanel from './components/SkillPanel.vue';
-import { useGobang } from './composables/useGobang';
-import type { GameMode, SkillType } from './types/game';
+import { ref, computed, watch } from "vue";
+import GameBoard from "./components/GameBoard.vue";
+import GameInfo from "./components/GameInfo.vue";
+import GameControl from "./components/GameControl.vue";
+import ProfessionalPanel from "./components/ProfessionalPanel.vue";
+import GameStartScreen from "./components/GameStartScreen.vue";
+import ManaBar from "./components/ManaBar.vue";
+import SkillPanel from "./components/SkillPanel.vue";
+import { useGobang } from "./composables/useGobang";
+import type { GameMode, SkillType } from "./types/game";
 
 const {
   board,
@@ -19,6 +19,7 @@ const {
   lastMove,
   mode,
   professionalPhase,
+  lastRemovedPiece,
   fiveOffers,
   forbiddenMoves,
   hasSwapped,
@@ -40,7 +41,7 @@ const {
   useSkill,
   executeSkillEffect,
   closeCounterWindow,
-  addManaCheat
+  addManaCheat,
 } = useGobang();
 
 const gameStarted = ref(false);
@@ -60,28 +61,31 @@ const backToStart = () => {
 };
 
 const canUndo = computed(() => {
-  if (mode.value === 'professional') {
+  if (mode.value === "professional") {
     return false;
   }
   return moveHistory.value.length > 0;
 });
 
 const showDecisionHint = computed(() => {
-  return mode.value === 'professional' && 
-         (professionalPhase.value === 'three-swap' || professionalPhase.value === 'five-choose');
+  return (
+    mode.value === "professional" &&
+    (professionalPhase.value === "three-swap" ||
+      professionalPhase.value === "five-choose")
+  );
 });
 
 const getDecisionHintText = computed(() => {
-  if (professionalPhase.value === 'three-swap') {
-    return '白方请在下方操作面板中选择是否交换黑白';
+  if (professionalPhase.value === "three-swap") {
+    return "白方请在下方操作面板中选择是否交换黑白";
   }
-  if (professionalPhase.value === 'five-choose') {
-    return `${hasSwapped.value ? '黑方' : '白方'}请在下方操作面板中选择落子点`;
+  if (professionalPhase.value === "five-choose") {
+    return `${hasSwapped.value ? "黑方" : "白方"}请在下方操作面板中选择落子点`;
   }
-  return '';
+  return "";
 });
 
-const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
+const handleSkillUse = (player: "black" | "white", skillId: SkillType) => {
   const success = useSkill(player, skillId);
   if (success) {
     console.log(`${player} activated skill: ${skillId}`);
@@ -93,7 +97,7 @@ const handleSkillUse = (player: 'black' | 'white', skillId: SkillType) => {
 const handleExecuteSkill = (row: number, col: number) => {
   const success = executeSkillEffect(row, col);
   if (!success) {
-    console.log('Invalid skill target');
+    console.log("Invalid skill target");
   }
 };
 
@@ -110,20 +114,21 @@ const handleCheat = () => {
 
 const canCounter = computed(() => {
   if (!counterWindowOpen.value || !counterWindowPlayer.value) return false;
-  const mana = counterWindowPlayer.value === 'black' ? blackMana.value : whiteMana.value;
+  const mana =
+    counterWindowPlayer.value === "black" ? blackMana.value : whiteMana.value;
   return mana.current >= 13;
 });
 
 const handleCounterSkill = () => {
   if (counterWindowPlayer.value && canCounter.value) {
-    handleSkillUse(counterWindowPlayer.value, 'comeback');
+    handleSkillUse(counterWindowPlayer.value, "comeback");
   }
 };
 
 watch(showDecisionHint, (newValue) => {
   if (newValue) {
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
   }
 });
@@ -140,11 +145,8 @@ watch(counterWindowOpen, (isOpen) => {
 </script>
 
 <template>
-  <GameStartScreen 
-    v-if="!gameStarted"
-    @start-game="startGame"
-  />
-  
+  <GameStartScreen v-if="!gameStarted" @start-game="startGame" />
+
   <div v-else class="app">
     <header class="header" @click="handleTitleClick">
       <h1>五子棋游戏</h1>
@@ -156,47 +158,53 @@ watch(counterWindowOpen, (isOpen) => {
 
     <main class="main">
       <!-- 反制窗口提示 -->
-      <div v-if="counterWindowOpen && counterWindowPlayer" class="counter-window">
+      <div
+        v-if="counterWindowOpen && counterWindowPlayer"
+        class="counter-window"
+      >
         <div class="counter-content">
           <div class="counter-icon">⚠️</div>
           <div class="counter-text">
             <h3>力拔山兮即将发动!</h3>
-            <p>{{ counterWindowPlayer === 'black' ? '黑方' : '白方' }}可以使用"东山再起"反制</p>
+            <p>
+              {{
+                counterWindowPlayer === "black" ? "黑方" : "白方"
+              }}可以使用"东山再起"反制
+            </p>
             <p v-if="canCounter" class="counter-timer">还有时间反制...</p>
             <p v-else class="no-mana-warning">⚠️ 法力值不足，无力反制</p>
           </div>
           <div class="counter-buttons">
-            <button 
+            <button
               v-if="canCounter"
-              class="counter-skill-btn" 
+              class="counter-skill-btn"
               @click="handleCounterSkill"
             >
               <span class="btn-icon">🔄</span>
               <span>使用东山再起</span>
               <span class="btn-cost">消耗 13 💎</span>
             </button>
-            <button 
-              v-else
-              class="counter-close-btn disabled" 
-              disabled
-            >
+            <button v-else class="counter-close-btn disabled" disabled>
               <span class="btn-icon">🔒</span>
               <span>法力值不足</span>
             </button>
           </div>
         </div>
       </div>
-      
+
       <!-- 跳过回合提示 -->
       <div v-if="skipNextTurn" class="skip-turn-hint">
         <span class="skip-icon">💤</span>
-        {{ skipNextTurn === 'black' ? '黑方' : '白方' }}下一回合将被跳过(静如止水效果)
+        {{
+          skipNextTurn === "black" ? "黑方" : "白方"
+        }}下一回合将被跳过(静如止水效果)
       </div>
 
       <!-- 调虎离山提示 -->
       <div v-if="diversionTurnsLeft > 0" class="diversion-hint">
         <span class="diversion-icon">🎯</span>
-        {{ currentPlayer === 'black' ? '白方' : '黑方' }}将暂停 {{ diversionTurnsLeft }} 回合(调虎离山效果)
+        {{ currentPlayer === "black" ? "白方" : "黑方" }}将暂停
+        {{ diversionTurnsLeft }} 回合(调虎离山效果)
       </div>
 
       <!-- 飞沙走石禁用提示 -->
@@ -211,6 +219,26 @@ watch(counterWindowOpen, (isOpen) => {
 
       <div v-if="showDecisionHint" class="top-hint">
         {{ getDecisionHintText }}
+      </div>
+
+      <!-- 拾金不昧可用提示 -->
+      <div
+        v-if="lastRemovedPiece && lastRemovedPiece.removedBy !== 'black'"
+        class="honesty-hint black-hint"
+      >
+        <span class="honesty-icon">💰</span>
+        黑方可以使用"拾金不昧"捡回被移除的{{
+          lastRemovedPiece.color === "black" ? "黑" : "白"
+        }}棋
+      </div>
+      <div
+        v-if="lastRemovedPiece && lastRemovedPiece.removedBy !== 'white'"
+        class="honesty-hint white-hint"
+      >
+        <span class="honesty-icon">💰</span>
+        白方可以使用"拾金不昧"捡回被移除的{{
+          lastRemovedPiece.color === "black" ? "黑" : "白"
+        }}棋
       </div>
 
       <GameInfo
@@ -248,15 +276,19 @@ watch(counterWindowOpen, (isOpen) => {
             <span class="player-icon">⚫</span>
             <span>黑方</span>
           </div>
-          <ManaBar 
-            :mana="blackMana" 
+          <ManaBar
+            :mana="blackMana"
             player-side="black"
             :total-moves="moveHistory.length"
           />
-          <SkillPanel 
-            :mana="blackMana" 
+          <SkillPanel
+            :mana="blackMana"
             player-side="black"
-            :disabled="currentPlayer !== 'black' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'black')"
+            :disabled="
+              currentPlayer !== 'black' ||
+              isGameOver ||
+              (counterWindowOpen && counterWindowPlayer === 'black')
+            "
             :fly-sand-banned="flySandBanned.black"
             @use-skill="(skillId) => handleSkillUse('black', skillId)"
           />
@@ -313,37 +345,39 @@ watch(counterWindowOpen, (isOpen) => {
             <span class="player-icon">⚪</span>
             <span>白方</span>
           </div>
-          <ManaBar 
-            :mana="whiteMana" 
+          <ManaBar
+            :mana="whiteMana"
             player-side="white"
             :total-moves="moveHistory.length"
           />
-          <SkillPanel 
-            :mana="whiteMana" 
+          <SkillPanel
+            :mana="whiteMana"
             player-side="white"
-            :disabled="currentPlayer !== 'white' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'white')"
+            :disabled="
+              currentPlayer !== 'white' ||
+              isGameOver ||
+              (counterWindowOpen && counterWindowPlayer === 'white')
+            "
             :fly-sand-banned="flySandBanned.white"
             @use-skill="(skillId) => handleSkillUse('white', skillId)"
           />
         </div>
       </div>
 
-      <GameControl
-        :can-undo="canUndo"
-        @undo="undo"
-        @restart="restart"
-      />
+      <GameControl :can-undo="canUndo" @undo="undo" @restart="restart" />
 
-      <div v-if="mode === 'professional' && forbiddenMoves.length > 0" class="hint-box">
+      <div
+        v-if="mode === 'professional' && forbiddenMoves.length > 0"
+        class="hint-box"
+      >
         <div class="hint-icon">⚠️</div>
         <div class="hint-text">
-          当前棋盘上有 <strong>{{ forbiddenMoves.length }}</strong> 个禁手位置(红色✕标记)
+          当前棋盘上有
+          <strong>{{ forbiddenMoves.length }}</strong> 个禁手位置(红色✕标记)
         </div>
       </div>
 
-      <button class="back-btn" @click="backToStart">
-        ← 返回模式选择
-      </button>
+      <button class="back-btn" @click="backToStart">← 返回模式选择</button>
     </main>
 
     <footer class="footer">
@@ -445,7 +479,8 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {
@@ -479,9 +514,16 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
 }
 
 .counter-buttons {
@@ -658,8 +700,12 @@ watch(counterWindowOpen, (isOpen) => {
 }
 
 @keyframes rainbow {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
 }
 
 .cheat-btn:hover {
@@ -804,17 +850,17 @@ watch(counterWindowOpen, (isOpen) => {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .side-panel {
     width: 100%;
     max-width: 600px;
   }
-  
+
   .left-panel,
   .right-panel {
     align-items: center;
   }
-  
+
   .dual-board {
     grid-template-columns: 1fr;
   }
@@ -824,9 +870,38 @@ watch(counterWindowOpen, (isOpen) => {
   .header h1 {
     font-size: 28px;
   }
-  
+
   .dual-board {
     gap: 15px;
   }
+}
+
+/* 添加拾金不昧提示样式 */
+.honesty-hint {
+  color: white;
+  padding: 12px 25px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.black-hint {
+  background: linear-gradient(135deg, #ffa726, #ff6f00);
+}
+
+.white-hint {
+  background: linear-gradient(135deg, #ffd54f, #ffa000);
+}
+
+.honesty-icon {
+  font-size: 20px;
 }
 </style>

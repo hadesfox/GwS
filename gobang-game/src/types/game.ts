@@ -118,7 +118,7 @@ export const SKILLS: Skill[] = [
   },
   {
     id: 'diversion',
-    name: '调呈离山',  // 修正名称
+    name: '调呈离山',
     description: '让对方暂停三回合',
     manaCost: 10,
     icon: '🎯'
@@ -133,15 +133,15 @@ export const SKILLS: Skill[] = [
   {
     id: 'honesty',
     name: '拾金不昧',
-    description: '技能描述待定',
-    manaCost: 2,
+    description: '对方使用飞沙走石时可用，将消失的棋子捡回来',
+    manaCost: 4,
     icon: '💰'
   },
   {
     id: 'water-drop',
     name: '水滴石穿',
-    description: '技能描述待定',
-    manaCost: 6,
+    description: '清空对方最后下的一步棋（静如止水生效时可用）',
+    manaCost: 7,
     icon: '💦'
   },
   {
@@ -154,8 +154,8 @@ export const SKILLS: Skill[] = [
   {
     id: 'see-you',
     name: 'see you again',
-    description: '技能描述待定',
-    manaCost: 10,
+    description: '直接获得胜利',
+    manaCost: 30,
     icon: '👋'
   }
 ];
