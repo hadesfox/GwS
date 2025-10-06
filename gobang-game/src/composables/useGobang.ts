@@ -1075,58 +1075,75 @@ export function useGobang() {
   };
 
   const restart = () => {
-    board.value = initBoard();
-    currentPlayer.value = "black";
-    winner.value = null;
-    isGameOver.value = false;
-    moveHistory.value = [];
-    professionalPhase.value = "normal";
-    fiveOffers.value = [];
-    forbiddenMoves.value = [];
-    hasSwapped.value = false;
+  board.value = initBoard();
+  currentPlayer.value = 'black';
+  winner.value = null;
+  isGameOver.value = false;
+  moveHistory.value = [];
+  professionalPhase.value = 'normal';
+  fiveOffers.value = [];
+  forbiddenMoves.value = [];
+  hasSwapped.value = false;
 
+// 根据法力值模式设置初始法力值
+  if (manaGrowthMode.value === 'alternate') {
+    // 快速模式：黑方开局1点法力
     blackMana.value = {
-      current: 0,
+      current: 1,
       max: MAX_MANA,
-      moveCounter: 0,
+      moveCounter: 0
     };
     whiteMana.value = {
       current: 0,
       max: MAX_MANA,
-      moveCounter: 0,
+      moveCounter: 0
     };
-
-    skillState.value = {
-      isSelecting: false,
-      skillType: null,
-      player: null,
+  } else {
+    // 标准模式：双方都是0
+    blackMana.value = {
+      current: 0,
+      max: MAX_MANA,
+      moveCounter: 0
     };
-    skipNextTurn.value = null;
-    counterWindowOpen.value = false;
-    counterWindowPlayer.value = null;
-    lastRemovedPiece.value = null;
-
-    flySandBanned.value = {
-      black: 0,
-      white: 0,
+    whiteMana.value = {
+      current: 0,
+      max: MAX_MANA,
+      moveCounter: 0
     };
-    diversionTurnsLeft.value = 0;
+  }
 
-    reverseEffect.value = {
-      targetPlayer: null,
-      casterPlayer: null,
-      casterLocked: false,
-      casterCanMove: 0,
-      showProgressBar: false,
-    };
-
-    if (mode.value === "professional") {
-      const centerPos = Math.floor(BOARD_SIZE / 2);
-      board.value[centerPos][centerPos] = "black";
-      moveHistory.value.push({ row: centerPos, col: centerPos });
-      currentPlayer.value = "black";
-    }
+   skillState.value = {
+    isSelecting: false,
+    skillType: null,
+    player: null
   };
+  skipNextTurn.value = null;
+  counterWindowOpen.value = false;
+  counterWindowPlayer.value = null;
+  
+  flySandBanned.value = {
+    black: 0,
+    white: 0
+  };
+  diversionTurnsLeft.value = 0;
+  
+  reverseEffect.value = {
+    targetPlayer: null,
+    casterPlayer: null,
+    casterLocked: false,
+    casterCanMove: 0,
+    showProgressBar: false
+  };
+  
+  lastRemovedPiece.value = null;
+
+  if (mode.value === 'professional') {
+    const centerPos = Math.floor(BOARD_SIZE / 2);
+    board.value[centerPos][centerPos] = 'black';
+    moveHistory.value.push({ row: centerPos, col: centerPos });
+    currentPlayer.value = 'black';
+  }
+};
 
   const gameState = computed<GameState>(() => ({
     board: board.value,

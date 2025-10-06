@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import GameBoard from "./components/GameBoard.vue";
-import GameInfo from "./components/GameInfo.vue";
-import GameControl from "./components/GameControl.vue";
-import ProfessionalPanel from "./components/ProfessionalPanel.vue";
-import GameStartScreen from "./components/GameStartScreen.vue";
-import ManaBar from "./components/ManaBar.vue";
-import SkillPanel from "./components/SkillPanel.vue";
-import { useGobang } from "./composables/useGobang";
-import type { GameMode, SkillType } from "./types/game";
+import { ref, computed, watch } from 'vue';
+import GameBoard from './components/GameBoard.vue';
+import GameInfo from './components/GameInfo.vue';
+import GameControl from './components/GameControl.vue';
+import ProfessionalPanel from './components/ProfessionalPanel.vue';
+import GameStartScreen from './components/GameStartScreen.vue';
+import SkillPanel from './components/SkillPanel.vue';
+import { useGobang } from './composables/useGobang';
+import type { GameMode, SkillType } from './types/game';
 
 const {
   board,
@@ -17,11 +16,8 @@ const {
   isGameOver,
   moveHistory,
   lastMove,
-  mode,
+  mode,  // 确保这个被解构了
   professionalPhase,
-  manaGrowthMode,
-  toggleManaGrowthMode,
-  lastRemovedPiece,
   fiveOffers,
   forbiddenMoves,
   hasSwapped,
@@ -34,6 +30,8 @@ const {
   flySandBanned,
   diversionTurnsLeft,
   reverseEffect,
+  lastRemovedPiece,
+  manaGrowthMode,  // 确保这个被解构了
   makeMove,
   undo,
   restart,
@@ -45,20 +43,8 @@ const {
   executeSkillEffect,
   closeCounterWindow,
   addManaCheat,
+  toggleManaGrowthMode  // 确保这个被解构了
 } = useGobang();
-
-// 计算进度条文本
-const getLoadingText = computed(() => {
-  const texts = [
-    '正在扫描硬盘...',
-    '正在读取文件列表...',
-    '正在分析文件结构...',
-    '正在加载系统数据...',
-    '正在检查文件完整性...'
-  ];
-  const index = Math.floor(reverseEffect.progress / 20);
-  return texts[Math.min(index, texts.length - 1)];
-});
 
 const gameStarted = ref(false);
 const titleClickCount = ref(0);
@@ -82,6 +68,24 @@ const canUndo = computed(() => {
   }
   return moveHistory.value.length > 0;
 });
+
+
+
+// 计算是否可以切换法力值模式
+const canChangeManaMode = computed(() => {
+  console.log('canChangeManaMode check:', {
+    mode: mode.value,
+    moveHistoryLength: moveHistory.value.length,
+    result: mode.value === 'professional' ? moveHistory.value.length <= 1 : moveHistory.value.length === 0
+  });
+  
+  if (mode.value === 'professional') {
+    return moveHistory.value.length <= 1;
+  } else {
+    return moveHistory.value.length === 0;
+  }
+});
+
 
 const showDecisionHint = computed(() => {
   return (
@@ -141,6 +145,27 @@ const handleCounterSkill = () => {
   }
 };
 
+const handleManaModeToggle = () => {
+  if (canChangeManaMode.value) {
+    toggleManaGrowthMode();
+    // 切换模式后重新开始游戏，应用新的法力值设置
+    restart();
+  }
+};
+
+// 计算进度条文本
+const getLoadingText = computed(() => {
+  const texts = [
+    '正在扫描硬盘...',
+    '正在读取文件列表...',
+    '正在分析文件结构...',
+    '正在加载系统数据...',
+    '正在检查文件完整性...'
+  ];
+  const index = Math.floor(reverseEffect.progress / 20);
+  return texts[Math.min(index, texts.length - 1)];
+});
+
 watch(showDecisionHint, (newValue) => {
   if (newValue) {
     setTimeout(() => {
@@ -168,7 +193,7 @@ watch(counterWindowOpen, (isOpen) => {
   
   <div v-else class="app">
     <header class="header" @click="handleTitleClick">
-      <h1>五子棋游戏</h1>
+      <h1>技能五子棋</h1>
       <p>
         <span v-if="mode === 'basic'">基础模式</span>
         <span v-else>专业模式（连珠）</span>
@@ -245,13 +270,21 @@ watch(counterWindowOpen, (isOpen) => {
       </div>
 
       <!-- 法力值增长模式切换按钮 - 左下角 -->
-      <button class="mana-mode-toggle" @click="toggleManaGrowthMode">
+      <button 
+        class="mana-mode-toggle" 
+        :class="{ 'disabled': !canChangeManaMode }"
+        :disabled="!canChangeManaMode"
+        @click="handleManaModeToggle"
+        :title="canChangeManaMode ? '点击切换法力值增长模式' : '已有玩家落子，无法切换'"
+      >
         <div class="toggle-icon">{{ manaGrowthMode === 'default' ? '🔄' : '⚡' }}</div>
         <div class="toggle-text">
           <div class="toggle-title">法力模式</div>
           <div class="toggle-mode">{{ manaGrowthMode === 'default' ? '标准(4步)' : '快速(2步)' }}</div>
         </div>
+        <div v-if="!canChangeManaMode" class="toggle-lock">🔒</div>
       </button>
+
 
       <GameInfo
         :current-player="currentPlayer"
@@ -1083,20 +1116,30 @@ watch(counterWindowOpen, (isOpen) => {
   align-items: center;
   gap: 10px;
   z-index: 100;
+  position: relative;
 }
 
-.mana-mode-toggle:hover {
+.mana-mode-toggle:not(.disabled):hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-.mana-mode-toggle:active {
+.mana-mode-toggle:not(.disabled):active {
   transform: translateY(-1px);
+}
+
+.mana-mode-toggle.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #999, #666);
 }
 
 .toggle-icon {
   font-size: 28px;
+}
+
+.mana-mode-toggle:not(.disabled) .toggle-icon {
   animation: rotateIcon 2s ease-in-out infinite;
 }
 
@@ -1135,6 +1178,21 @@ watch(counterWindowOpen, (isOpen) => {
   text-align: center;
 }
 
+.toggle-lock {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 20px;
+  background: #ff6b6b;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
   .mana-mode-toggle {
@@ -1153,6 +1211,12 @@ watch(counterWindowOpen, (isOpen) => {
   
   .toggle-mode {
     font-size: 11px;
+  }
+  
+  .toggle-lock {
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
   }
 }
 </style>
