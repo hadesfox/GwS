@@ -322,224 +322,263 @@ export function useGobang() {
   } | null>(null);
 
   // 使用技能
-  const useSkill = (player: 'black' | 'white', skillId: SkillType): boolean => {
-  const mana = player === 'black' ? blackMana : whiteMana;
-  const skill = SKILLS.find(s => s.id === skillId);
-  
-  if (!skill) return false;
-  
-  if (mana.value.current < skill.manaCost) {
-    return false;
-  }
-  
-  // 检查飞沙走石是否被禁用
-  if (skillId === 'fly-sand') {
-    const banCount = player === 'black' ? flySandBanned.value.black : flySandBanned.value.white;
-    if (banCount > 0) {
-      console.log(`${player} cannot use fly-sand - banned for ${banCount} more turns`);
+  const useSkill = (player: "black" | "white", skillId: SkillType): boolean => {
+    const mana = player === "black" ? blackMana : whiteMana;
+    const skill = SKILLS.find((s) => s.id === skillId);
+
+    if (!skill) return false;
+
+    if (mana.value.current < skill.manaCost) {
       return false;
     }
-  }
+
+    // 检查飞沙走石是否被禁用
+    if (skillId === "fly-sand") {
+      const banCount =
+        player === "black"
+          ? flySandBanned.value.black
+          : flySandBanned.value.white;
+      if (banCount > 0) {
+        console.log(
+          `${player} cannot use fly-sand - banned for ${banCount} more turns`
+        );
+        return false;
+      }
+    }
 
     switch (skillId) {
-    case 'fly-sand':
-      skillState.value = {
-        isSelecting: true,
-        skillType: 'fly-sand',
-        player: player
-      };
-      return true;
-    
-    case 'still-water': {
-      const opponent = player === 'black' ? 'white' : 'black';
-      skipNextTurn.value = opponent;
-      mana.value.current -= skill.manaCost;
-      console.log(`${player} used Still Water - ${opponent} will skip next turn`);
-      return true;
-    }
-    
-    case 'mighty-power': {
-      const opponent = player === 'black' ? 'white' : 'black';
-      counterWindowOpen.value = true;
-      counterWindowPlayer.value = opponent;
-      
-      skillState.value = {
-        isSelecting: false,
-        skillType: 'mighty-power',
-        player: player,
-        canCounter: true,
-        counterTarget: opponent
-      };
-      
-      console.log(`${player} is attempting Mighty Power - ${opponent} can counter!`);
-      return true;
-    }
-    
-    case 'comeback': {
-      if (!counterWindowOpen.value || counterWindowPlayer.value !== player) {
-        console.log('Cannot use Comeback - no counter window open');
-        return false;
+      case "fly-sand":
+        skillState.value = {
+          isSelecting: true,
+          skillType: "fly-sand",
+          player: player,
+        };
+        return true;
+
+      case "still-water": {
+        const opponent = player === "black" ? "white" : "black";
+        skipNextTurn.value = opponent;
+        mana.value.current -= skill.manaCost;
+        console.log(
+          `${player} used Still Water - ${opponent} will skip next turn`
+        );
+        return true;
       }
-      
-      const attacker = skillState.value.player!;
-      
-      const currentPieces: Array<{row: number, col: number, color: Player}> = [];
-      for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-          if (board.value[row][col] !== null) {
-            currentPieces.push({
-              row,
-              col,
-              color: board.value[row][col]
-            });
+
+      case "mighty-power": {
+        const opponent = player === "black" ? "white" : "black";
+        counterWindowOpen.value = true;
+        counterWindowPlayer.value = opponent;
+
+        skillState.value = {
+          isSelecting: false,
+          skillType: "mighty-power",
+          player: player,
+          canCounter: true,
+          counterTarget: opponent,
+        };
+
+        console.log(
+          `${player} is attempting Mighty Power - ${opponent} can counter!`
+        );
+        return true;
+      }
+
+      case "reverse": {
+        const opponent = player === "black" ? "white" : "black";
+        reverseEffect.value = {
+          targetPlayer: opponent,
+          turnsLeft: 2,
+          progress: 0,
+        };
+        mana.value.current -= skill.manaCost;
+        console.log(
+          `${player} used Reverse - ${opponent} will see fake loading screen for 2 turns`
+        );
+        return true;
+      }
+
+      case "comeback": {
+        if (!counterWindowOpen.value || counterWindowPlayer.value !== player) {
+          console.log("Cannot use Comeback - no counter window open");
+          return false;
+        }
+
+        const attacker = skillState.value.player!;
+
+        const currentPieces: Array<{
+          row: number;
+          col: number;
+          color: Player;
+        }> = [];
+        for (let row = 0; row < BOARD_SIZE; row++) {
+          for (let col = 0; col < BOARD_SIZE; col++) {
+            if (board.value[row][col] !== null) {
+              currentPieces.push({
+                row,
+                col,
+                color: board.value[row][col],
+              });
+            }
           }
         }
-      }
-      
-      board.value = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
-      randomlyPlacePieces(currentPieces);
-      
-      moveHistory.value = [];
-      for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-          if (board.value[row][col] !== null) {
-            moveHistory.value.push({ row, col });
+
+        board.value = Array(BOARD_SIZE)
+          .fill(null)
+          .map(() => Array(BOARD_SIZE).fill(null));
+        randomlyPlacePieces(currentPieces);
+
+        moveHistory.value = [];
+        for (let row = 0; row < BOARD_SIZE; row++) {
+          for (let col = 0; col < BOARD_SIZE; col++) {
+            if (board.value[row][col] !== null) {
+              moveHistory.value.push({ row, col });
+            }
           }
         }
-      }
-      
-      mana.value.current -= skill.manaCost;
-      const attackerMana = attacker === 'black' ? blackMana : whiteMana;
-      const mightyPowerSkill = SKILLS.find(s => s.id === 'mighty-power')!;
-      attackerMana.value.current -= mightyPowerSkill.manaCost;
-      
-      counterWindowOpen.value = false;
-      counterWindowPlayer.value = null;
-      
-      skillState.value = {
-        isSelecting: false,
-        skillType: null,
-        player: null
-      };
-      
-      if (mode.value === 'professional') {
-        updateForbiddenMoves();
-      }
-      
-      console.log(`${player} countered with Comeback - pieces randomly rearranged!`);
-      return true;
-    }
-    
-    case 'capture': {
-      const opponent = player === 'black' ? 'white' : 'black';
-      if (opponent === 'black') {
-        flySandBanned.value.black = 2;
-      } else {
-        flySandBanned.value.white = 2;
-      }
-      mana.value.current -= skill.manaCost;
-      console.log(`${player} used Capture - ${opponent} cannot use fly-sand for 2 turns`);
-      return true;
-    }
-    
-    case 'diversion': {
-      diversionTurnsLeft.value = 3;
-      mana.value.current -= skill.manaCost;
-      console.log(`${player} used Diversion - opponent will skip 3 turns`);
-      return true;
-    }
-    
-    case 'cleaner': {
-      skillState.value = {
-        isSelecting: true,
-        skillType: 'cleaner',
-        player: player
-      };
-      return true;
-    }
-    
-    case 'honesty': {
-      // 检查是否有可以捡回的棋子
-      if (!lastRemovedPiece.value || lastRemovedPiece.value.removedBy === player) {
-        console.log('Cannot use Honesty - no piece removed by opponent');
-        return false;
-      }
-      
-      // 将棋子放回原位
-      const piece = lastRemovedPiece.value;
-      board.value[piece.row][piece.col] = piece.color;
-      moveHistory.value.push({ row: piece.row, col: piece.col });
-      
-      mana.value.current -= skill.manaCost;
-      
-      // 清除已使用的记录
-      lastRemovedPiece.value = null;
-      
-      if (mode.value === 'professional') {
-        updateForbiddenMoves();
-      }
-      
-      console.log(`${player} used Honesty - retrieved the removed piece`);
-      return true;
-    }
-    
-    case 'water-drop': {
-      // 只有在静如止水生效时才能使用
-      if (!skipNextTurn.value) {
-        console.log('Cannot use Water Drop - Still Water is not active');
-        return false;
-      }
-      
-      const targetPlayer = skipNextTurn.value;
-      
-      // 找到目标玩家的最后一步棋
-      let lastPiecePos: Position | null = null;
-      for (let i = moveHistory.value.length - 1; i >= 0; i--) {
-        const pos = moveHistory.value[i];
-        if (board.value[pos.row][pos.col] === targetPlayer) {
-          lastPiecePos = pos;
-          break;
+
+        mana.value.current -= skill.manaCost;
+        const attackerMana = attacker === "black" ? blackMana : whiteMana;
+        const mightyPowerSkill = SKILLS.find((s) => s.id === "mighty-power")!;
+        attackerMana.value.current -= mightyPowerSkill.manaCost;
+
+        counterWindowOpen.value = false;
+        counterWindowPlayer.value = null;
+
+        skillState.value = {
+          isSelecting: false,
+          skillType: null,
+          player: null,
+        };
+
+        if (mode.value === "professional") {
+          updateForbiddenMoves();
         }
+
+        console.log(
+          `${player} countered with Comeback - pieces randomly rearranged!`
+        );
+        return true;
       }
-      
-      if (!lastPiecePos) {
-        console.log('Cannot use Water Drop - target player has no pieces');
+
+      case "capture": {
+        const opponent = player === "black" ? "white" : "black";
+        if (opponent === "black") {
+          flySandBanned.value.black = 2;
+        } else {
+          flySandBanned.value.white = 2;
+        }
+        mana.value.current -= skill.manaCost;
+        console.log(
+          `${player} used Capture - ${opponent} cannot use fly-sand for 2 turns`
+        );
+        return true;
+      }
+
+      case "diversion": {
+        diversionTurnsLeft.value = 3;
+        mana.value.current -= skill.manaCost;
+        console.log(`${player} used Diversion - opponent will skip 3 turns`);
+        return true;
+      }
+
+      case "cleaner": {
+        skillState.value = {
+          isSelecting: true,
+          skillType: "cleaner",
+          player: player,
+        };
+        return true;
+      }
+
+      case "honesty": {
+        // 检查是否有可以捡回的棋子
+        if (
+          !lastRemovedPiece.value ||
+          lastRemovedPiece.value.removedBy === player
+        ) {
+          console.log("Cannot use Honesty - no piece removed by opponent");
+          return false;
+        }
+
+        // 将棋子放回原位
+        const piece = lastRemovedPiece.value;
+        board.value[piece.row][piece.col] = piece.color;
+        moveHistory.value.push({ row: piece.row, col: piece.col });
+
+        mana.value.current -= skill.manaCost;
+
+        // 清除已使用的记录
+        lastRemovedPiece.value = null;
+
+        if (mode.value === "professional") {
+          updateForbiddenMoves();
+        }
+
+        console.log(`${player} used Honesty - retrieved the removed piece`);
+        return true;
+      }
+
+      case "water-drop": {
+        // 只有在静如止水生效时才能使用
+        if (!skipNextTurn.value) {
+          console.log("Cannot use Water Drop - Still Water is not active");
+          return false;
+        }
+
+        const targetPlayer = skipNextTurn.value;
+
+        // 找到目标玩家的最后一步棋
+        let lastPiecePos: Position | null = null;
+        for (let i = moveHistory.value.length - 1; i >= 0; i--) {
+          const pos = moveHistory.value[i];
+          if (board.value[pos.row][pos.col] === targetPlayer) {
+            lastPiecePos = pos;
+            break;
+          }
+        }
+
+        if (!lastPiecePos) {
+          console.log("Cannot use Water Drop - target player has no pieces");
+          return false;
+        }
+
+        // 清空该棋子
+        board.value[lastPiecePos.row][lastPiecePos.col] = null;
+        const moveIndex = moveHistory.value.findIndex(
+          (move) =>
+            move.row === lastPiecePos!.row && move.col === lastPiecePos!.col
+        );
+        if (moveIndex !== -1) {
+          moveHistory.value.splice(moveIndex, 1);
+        }
+
+        mana.value.current -= skill.manaCost;
+
+        if (mode.value === "professional") {
+          updateForbiddenMoves();
+        }
+
+        console.log(
+          `${player} used Water Drop - removed ${targetPlayer}'s last piece`
+        );
+        return true;
+      }
+
+      case "see-you": {
+        // 直接获胜
+        mana.value.current -= skill.manaCost;
+        winner.value = player;
+        isGameOver.value = true;
+        console.log(`${player} used See You Again and wins!`);
+        return true;
+      }
+
+      default:
+        console.log(`Skill ${skillId} not implemented yet`);
         return false;
-      }
-      
-      // 清空该棋子
-      board.value[lastPiecePos.row][lastPiecePos.col] = null;
-      const moveIndex = moveHistory.value.findIndex(
-        move => move.row === lastPiecePos!.row && move.col === lastPiecePos!.col
-      );
-      if (moveIndex !== -1) {
-        moveHistory.value.splice(moveIndex, 1);
-      }
-      
-      mana.value.current -= skill.manaCost;
-      
-      if (mode.value === 'professional') {
-        updateForbiddenMoves();
-      }
-      
-      console.log(`${player} used Water Drop - removed ${targetPlayer}'s last piece`);
-      return true;
     }
-    
-    case 'see-you': {
-      // 直接获胜
-      mana.value.current -= skill.manaCost;
-      winner.value = player;
-      isGameOver.value = true;
-      console.log(`${player} used See You Again and wins!`);
-      return true;
-    }
-    
-    default:
-      console.log(`Skill ${skillId} not implemented yet`);
-      return false;
-  }
-};
+  };
 
   const executeMightyPower = () => {
     if (skillState.value.skillType !== "mighty-power") return;
@@ -581,98 +620,98 @@ export function useGobang() {
 
   // 执行技能效果
   const executeSkillEffect = (row: number, col: number): boolean => {
-  if (!skillState.value.isSelecting || !skillState.value.skillType) {
-    return false;
-  }
-  
-  const player = skillState.value.player!;
-  const skillType = skillState.value.skillType;
-  const mana = player === 'black' ? blackMana : whiteMana;
-  const skill = SKILLS.find(s => s.id === skillType);
-  
-  if (!skill) return false;
-  
-  switch (skillType) {
-    case 'fly-sand': {
-      if (board.value[row][col] === null) {
-        return false;
-      }
-      
-      // 记录被删除的棋子信息
-      lastRemovedPiece.value = {
-        row: row,
-        col: col,
-        color: board.value[row][col]!,
-        removedBy: player
-      };
-      
-      board.value[row][col] = null;
-      
-      const moveIndex = moveHistory.value.findIndex(
-        move => move.row === row && move.col === col
-      );
-      if (moveIndex !== -1) {
-        moveHistory.value.splice(moveIndex, 1);
-      }
-      
-      mana.value.current -= skill.manaCost;
-      
-      skillState.value = {
-        isSelecting: false,
-        skillType: null,
-        player: null
-      };
-      
-      if (mode.value === 'professional') {
-        updateForbiddenMoves();
-      }
-      
-      return true;
+    if (!skillState.value.isSelecting || !skillState.value.skillType) {
+      return false;
     }
-    
-    case 'cleaner': {
-      if (row < 0 || row >= BOARD_SIZE) {
-        return false;
+
+    const player = skillState.value.player!;
+    const skillType = skillState.value.skillType;
+    const mana = player === "black" ? blackMana : whiteMana;
+    const skill = SKILLS.find((s) => s.id === skillType);
+
+    if (!skill) return false;
+
+    switch (skillType) {
+      case "fly-sand": {
+        if (board.value[row][col] === null) {
+          return false;
+        }
+
+        // 记录被删除的棋子信息
+        lastRemovedPiece.value = {
+          row: row,
+          col: col,
+          color: board.value[row][col]!,
+          removedBy: player,
+        };
+
+        board.value[row][col] = null;
+
+        const moveIndex = moveHistory.value.findIndex(
+          (move) => move.row === row && move.col === col
+        );
+        if (moveIndex !== -1) {
+          moveHistory.value.splice(moveIndex, 1);
+        }
+
+        mana.value.current -= skill.manaCost;
+
+        skillState.value = {
+          isSelecting: false,
+          skillType: null,
+          player: null,
+        };
+
+        if (mode.value === "professional") {
+          updateForbiddenMoves();
+        }
+
+        return true;
       }
-      
-      const startRow = Math.max(0, row - 1);
-      const endRow = Math.min(BOARD_SIZE - 1, row + 1);
-      
-      for (let r = startRow; r <= endRow; r++) {
-        for (let c = 0; c < BOARD_SIZE; c++) {
-          if (board.value[r][c] !== null) {
-            board.value[r][c] = null;
-            
-            const moveIndex = moveHistory.value.findIndex(
-              move => move.row === r && move.col === c
-            );
-            if (moveIndex !== -1) {
-              moveHistory.value.splice(moveIndex, 1);
+
+      case "cleaner": {
+        if (row < 0 || row >= BOARD_SIZE) {
+          return false;
+        }
+
+        const startRow = Math.max(0, row - 1);
+        const endRow = Math.min(BOARD_SIZE - 1, row + 1);
+
+        for (let r = startRow; r <= endRow; r++) {
+          for (let c = 0; c < BOARD_SIZE; c++) {
+            if (board.value[r][c] !== null) {
+              board.value[r][c] = null;
+
+              const moveIndex = moveHistory.value.findIndex(
+                (move) => move.row === r && move.col === c
+              );
+              if (moveIndex !== -1) {
+                moveHistory.value.splice(moveIndex, 1);
+              }
             }
           }
         }
+
+        mana.value.current -= skill.manaCost;
+
+        skillState.value = {
+          isSelecting: false,
+          skillType: null,
+          player: null,
+        };
+
+        if (mode.value === "professional") {
+          updateForbiddenMoves();
+        }
+
+        console.log(`Cleaned rows ${startRow} to ${endRow}`);
+        return true;
       }
-      
-      mana.value.current -= skill.manaCost;
-      
-      skillState.value = {
-        isSelecting: false,
-        skillType: null,
-        player: null
-      };
-      
-      if (mode.value === 'professional') {
-        updateForbiddenMoves();
-      }
-      
-      console.log(`Cleaned rows ${startRow} to ${endRow}`);
-      return true;
+
+      default:
+        return false;
     }
-    
-    default:
-      return false;
-  }
-};
+  };
 
   const cancelSkillSelection = () => {
     skillState.value = {
@@ -768,6 +807,27 @@ export function useGobang() {
         fiveOffers.value = [];
         updateForbiddenMoves();
         return true;
+      }
+    }
+
+    // 在玩家切换之前，更新两极反转效果
+    if (reverseEffect.value.targetPlayer && reverseEffect.value.turnsLeft > 0) {
+      // 如果当前玩家是被干扰的目标，则减少剩余回合数
+      if (currentPlayer.value === reverseEffect.value.targetPlayer) {
+        reverseEffect.value.turnsLeft--;
+        // 更新进度（从0缓慢增长到100）
+        if (reverseEffect.value.turnsLeft === 1) {
+          reverseEffect.value.progress = 45; // 第一回合后进度到45%
+        } else if (reverseEffect.value.turnsLeft === 0) {
+          reverseEffect.value.progress = 100; // 第二回合后完成
+          // 延迟清除效果
+          setTimeout(() => {
+            reverseEffect.value.targetPlayer = null;
+          }, 1000);
+        }
+        console.log(
+          `Reverse effect on ${currentPlayer.value}: ${reverseEffect.value.turnsLeft} turns left, progress: ${reverseEffect.value.progress}%`
+        );
       }
     }
 
@@ -957,6 +1017,12 @@ export function useGobang() {
     };
     diversionTurnsLeft.value = 0;
 
+    reverseEffect.value = {
+      targetPlayer: null,
+      turnsLeft: 0,
+      progress: 0,
+    };
+
     if (mode.value === "professional") {
       const centerPos = Math.floor(BOARD_SIZE / 2);
       board.value[centerPos][centerPos] = "black";
@@ -978,6 +1044,16 @@ export function useGobang() {
     blackMana: blackMana.value,
     whiteMana: whiteMana.value,
   }));
+
+  const reverseEffect = ref<{
+    targetPlayer: "black" | "white" | null;
+    turnsLeft: number;
+    progress: number;
+  }>({
+    targetPlayer: null,
+    turnsLeft: 0,
+    progress: 0,
+  });
 
   return {
     // ... 现有的返回值
@@ -1002,6 +1078,7 @@ export function useGobang() {
     flySandBanned, // 新增
     diversionTurnsLeft, // 新增
     lastRemovedPiece,
+    reverseEffect,
     makeMove,
     undo,
     restart,

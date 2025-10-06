@@ -31,6 +31,7 @@ const {
   counterWindowPlayer,
   flySandBanned,
   diversionTurnsLeft,
+  reverseEffect,
   makeMove,
   undo,
   restart,
@@ -43,6 +44,19 @@ const {
   closeCounterWindow,
   addManaCheat,
 } = useGobang();
+
+// 计算进度条文本
+const getLoadingText = computed(() => {
+  const texts = [
+    '正在扫描硬盘...',
+    '正在读取文件列表...',
+    '正在分析文件结构...',
+    '正在加载系统数据...',
+    '正在检查文件完整性...'
+  ];
+  const index = Math.floor(reverseEffect.progress / 20);
+  return texts[Math.min(index, texts.length - 1)];
+});
 
 const gameStarted = ref(false);
 const titleClickCount = ref(0);
@@ -145,14 +159,17 @@ watch(counterWindowOpen, (isOpen) => {
 </script>
 
 <template>
-  <GameStartScreen v-if="!gameStarted" @start-game="startGame" />
-
+  <GameStartScreen 
+    v-if="!gameStarted"
+    @start-game="startGame"
+  />
+  
   <div v-else class="app">
     <header class="header" @click="handleTitleClick">
       <h1>技能五子棋</h1>
       <p>
         <span v-if="mode === 'basic'">基础模式</span>
-        <span v-else>专业模式(连珠)</span>
+        <span v-else>专业模式（连珠）</span>
       </p>
     </header>
 
@@ -261,7 +278,7 @@ watch(counterWindowOpen, (isOpen) => {
         @choose-five-offer="chooseFiveOffer"
       />
 
-      <!-- 作弊按钮 - 在棋盘上方 -->
+      <!-- 作弊按钮 -->
       <div v-if="showCheatButton" class="cheat-container">
         <button class="cheat-btn" @click="handleCheat">
           🎮 作弊: 双方+2法力
@@ -269,94 +286,132 @@ watch(counterWindowOpen, (isOpen) => {
       </div>
 
       <!-- 游戏容器 -->
-  <div class="game-container">
-    <!-- 黑方技能区域 -->
-    <div class="side-panel left-panel">
-      <div class="player-label black-label">
-        <span class="player-icon">⚫</span>
-        <span>黑方</span>
-      </div>
-      <ManaBar 
-        :mana="blackMana" 
-        player-side="black"
-        :total-moves="moveHistory.length"
-      />
-      <SkillPanel 
-        :mana="blackMana" 
-        player-side="black"
-        :disabled="currentPlayer !== 'black' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'black')"
-        :fly-sand-banned="flySandBanned.black"
-        :skip-next-turn="skipNextTurn"
-        @use-skill="(skillId) => handleSkillUse('black', skillId)"
-      />
-    </div>
-
-         <!-- 棋盘区域 -->
-    <div class="board-container">
-      <div class="dual-board">
-        <!-- 黑方棋盘 -->
-        <div class="board-wrapper black-board">
-          <GameBoard
-            :board="board"
-            :is-game-over="isGameOver"
-            :last-move="lastMove"
-            :forbidden-moves="forbiddenMoves"
-            :five-offers="fiveOffers"
-            :current-player="currentPlayer"
-            :player-side="'black'"
-            :professional-phase="professionalPhase"
-            :move-count="moveHistory.length"
-            :has-swapped="hasSwapped"
-            :mode="mode"
-            :skill-state="skillState"
-            @make-move="makeMove"
-            @execute-skill="handleExecuteSkill"
+      <div class="game-container">
+        <!-- 黑方技能区域 -->
+        <div class="side-panel left-panel">
+          <div class="player-label black-label">
+            <span class="player-icon">⚫</span>
+            <span>黑方</span>
+          </div>
+          <ManaBar 
+            :mana="blackMana" 
+            player-side="black"
+            :total-moves="moveHistory.length"
+          />
+          <SkillPanel 
+            :mana="blackMana" 
+            player-side="black"
+            :disabled="currentPlayer !== 'black' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'black')"
+            :fly-sand-banned="flySandBanned.black"
+            @use-skill="(skillId) => handleSkillUse('black', skillId)"
           />
         </div>
 
-             <!-- 白方棋盘 -->
-        <div class="board-wrapper white-board">
-          <GameBoard
-            :board="board"
-            :is-game-over="isGameOver"
-            :last-move="lastMove"
-            :forbidden-moves="forbiddenMoves"
-            :five-offers="fiveOffers"
-            :current-player="currentPlayer"
-            :player-side="'white'"
-            :professional-phase="professionalPhase"
-            :move-count="moveHistory.length"
-            :has-swapped="hasSwapped"
-            :mode="mode"
-            :skill-state="skillState"
-            @make-move="makeMove"
-            @execute-skill="handleExecuteSkill"
-          />
+        <!-- 棋盘区域 -->
+        <div class="board-container">
+          <div class="dual-board">
+            <!-- 黑方棋盘 -->
+            <div class="board-wrapper black-board">
+              <!-- 两极反转进度条覆盖层 - 黑方 -->
+              <div v-if="reverseEffect.targetPlayer === 'black' && reverseEffect.turnsLeft > 0" class="reverse-overlay">
+                <div class="loading-container">
+                  <div class="loading-icon">💾</div>
+                  <div class="loading-text">{{ getLoadingText }}</div>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" :style="{ width: reverseEffect.progress + '%' }">
+                      <div class="progress-shine"></div>
+                    </div>
+                  </div>
+                  <div class="loading-percentage">{{ Math.floor(reverseEffect.progress) }}%</div>
+                  <div class="file-list">
+                    <div class="file-item">📁 C:\Windows\System32\...</div>
+                    <div class="file-item">📁 C:\Program Files\...</div>
+                    <div class="file-item">📁 C:\Users\Documents\...</div>
+                  </div>
+                  <div class="loading-warning">⚠️ 请勿关闭此窗口</div>
+                </div>
+              </div>
+              
+              <GameBoard
+                :board="board"
+                :is-game-over="isGameOver"
+                :last-move="lastMove"
+                :forbidden-moves="forbiddenMoves"
+                :five-offers="fiveOffers"
+                :current-player="currentPlayer"
+                :player-side="'black'"
+                :professional-phase="professionalPhase"
+                :move-count="moveHistory.length"
+                :has-swapped="hasSwapped"
+                :mode="mode"
+                :skill-state="skillState"
+                @make-move="makeMove"
+                @execute-skill="handleExecuteSkill"
+              />
+            </div>
+
+            <!-- 白方棋盘 -->
+            <div class="board-wrapper white-board">
+              <!-- 两极反转进度条覆盖层 - 白方 -->
+              <div v-if="reverseEffect.targetPlayer === 'white' && reverseEffect.turnsLeft > 0" class="reverse-overlay">
+                <div class="loading-container">
+                  <div class="loading-icon">💾</div>
+                  <div class="loading-text">{{ getLoadingText }}</div>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" :style="{ width: reverseEffect.progress + '%' }">
+                      <div class="progress-shine"></div>
+                    </div>
+                  </div>
+                  <div class="loading-percentage">{{ Math.floor(reverseEffect.progress) }}%</div>
+                  <div class="file-list">
+                    <div class="file-item">📁 C:\Windows\System32\...</div>
+                    <div class="file-item">📁 C:\Program Files\...</div>
+                    <div class="file-item">📁 C:\Users\Documents\...</div>
+                  </div>
+                  <div class="loading-warning">⚠️ 请勿关闭此窗口</div>
+                </div>
+              </div>
+              
+              <GameBoard
+                :board="board"
+                :is-game-over="isGameOver"
+                :last-move="lastMove"
+                :forbidden-moves="forbiddenMoves"
+                :five-offers="fiveOffers"
+                :current-player="currentPlayer"
+                :player-side="'white'"
+                :professional-phase="professionalPhase"
+                :move-count="moveHistory.length"
+                :has-swapped="hasSwapped"
+                :mode="mode"
+                :skill-state="skillState"
+                @make-move="makeMove"
+                @execute-skill="handleExecuteSkill"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
 
         <!-- 白方技能区域 -->
-    <div class="side-panel right-panel">
-      <div class="player-label white-label">
-        <span class="player-icon">⚪</span>
-        <span>白方</span>
+        <div class="side-panel right-panel">
+          <div class="player-label white-label">
+            <span class="player-icon">⚪</span>
+            <span>白方</span>
+          </div>
+          <ManaBar 
+            :mana="whiteMana" 
+            player-side="white"
+            :total-moves="moveHistory.length"
+          />
+          <SkillPanel 
+            :mana="whiteMana" 
+            player-side="white"
+            :disabled="currentPlayer !== 'white' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'white')"
+            :fly-sand-banned="flySandBanned.white"
+            @use-skill="(skillId) => handleSkillUse('white', skillId)"
+          />
+        </div>
       </div>
-      <ManaBar 
-        :mana="whiteMana" 
-        player-side="white"
-        :total-moves="moveHistory.length"
-      />
-      <SkillPanel 
-        :mana="whiteMana" 
-        player-side="white"
-        :disabled="currentPlayer !== 'white' || isGameOver || (counterWindowOpen && counterWindowPlayer === 'white')"
-        :fly-sand-banned="flySandBanned.white"
-        :skip-next-turn="skipNextTurn"
-        @use-skill="(skillId) => handleSkillUse('white', skillId)"
-      />
-    </div>
-  </div>
 
       <GameControl :can-undo="canUndo" @undo="undo" @restart="restart" />
 
@@ -375,7 +430,7 @@ watch(counterWindowOpen, (isOpen) => {
     </main>
 
     <footer class="footer">
-      <p>使用 Vue 3 + TypeScript + Vite 构建</p>
+      <p>狐漠离使用 Claude 辅助 Vue 3 + TypeScript + Vite 构建</p>
     </footer>
   </div>
 </template>
@@ -898,5 +953,207 @@ watch(counterWindowOpen, (isOpen) => {
 
 .honesty-icon {
   font-size: 20px;
+}
+
+/* 添加两极反转效果样式 */
+.board-wrapper {
+  position: relative;
+  background: white;
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.reverse-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(3px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  animation: overlayFadeIn 0.5s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loading-container {
+  background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
+  border: 2px solid #444;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: containerSlide 0.5s ease-out;
+}
+
+@keyframes containerSlide {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.loading-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 15px;
+  animation: iconPulse 2s infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.loading-text {
+  color: #00d4ff;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+  animation: textBlink 1.5s infinite;
+}
+
+@keyframes textBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.progress-bar-container {
+  background: #333;
+  border-radius: 10px;
+  height: 30px;
+  margin-bottom: 15px;
+  overflow: hidden;
+  border: 1px solid #555;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff, #0096ff, #00d4ff);
+  background-size: 200% 100%;
+  border-radius: 10px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  animation: progressGradient 2s linear infinite;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+@keyframes progressGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.progress-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.loading-percentage {
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.file-list {
+  background: #222;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #444;
+}
+
+.file-item {
+  color: #aaa;
+  font-size: 12px;
+  padding: 4px 0;
+  font-family: 'Courier New', monospace;
+  animation: fileScan 3s infinite;
+}
+
+.file-item:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.file-item:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.file-item:nth-child(3) {
+  animation-delay: 1s;
+}
+
+@keyframes fileScan {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+    color: #00d4ff;
+  }
+}
+
+.loading-warning {
+  color: #ff9800;
+  font-size: 13px;
+  text-align: center;
+  font-weight: bold;
+  animation: warningBlink 1s infinite;
+}
+
+@keyframes warningBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 </style>

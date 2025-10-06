@@ -147,8 +147,8 @@ export const SKILLS: Skill[] = [
   {
     id: 'reverse',
     name: '两极反转',
-    description: '技能描述待定',
-    manaCost: 8,
+    description: '在对方画面显示假的文件读取进度条，持续两回合',
+    manaCost: 15,
     icon: '🔃'
   },
   {
