@@ -17,8 +17,3 @@ html, body {
   padding: 0;
   overflow-x: hidden;  /* 防止横向超出导致的遮挡 */
 }
-
-#app {
-  width: 100%;
-  min-height: 100vh;
-}
