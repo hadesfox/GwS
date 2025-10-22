@@ -108,7 +108,7 @@ export const SKILLS: Skill[] = [
     id: 'fly-sand',
     name: '飞沙走石',
     description: '移除棋盘上的任意一个棋子',
-    manaCost: 3,
+    manaCost: 2,
     icon: '🌪️'
   },
   {
@@ -136,7 +136,7 @@ export const SKILLS: Skill[] = [
     id: 'capture',
     name: '擒擒又拿拿',
     description: '让对方在两回合内禁止使用飞沙走石',
-    manaCost: 2,
+    manaCost: 3,
     icon: '✊'
   },
   {
@@ -164,7 +164,7 @@ export const SKILLS: Skill[] = [
     id: 'water-drop',
     name: '水滴石穿',
     description: '清空对方最后下的一步棋（静如止水生效时可用）',
-    manaCost: 7,
+    manaCost: 4,
     icon: '💦'
   },
   {
