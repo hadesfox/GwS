@@ -1068,19 +1068,20 @@ watch(counterWindowOpen, (isOpen) => {
   border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-@media (max-width: 1500px) {
+/* 原来是 1500px，这里改为 1100px 或 1024px 更合适 */
+@media (max-width: 1100px) {
   .game-container {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .player-section {
     width: 100%;
     max-width: 600px;
     flex-direction: row;
     justify-content: space-between;
   }
-  
+
   .dual-board {
     grid-template-columns: 1fr;
   }
