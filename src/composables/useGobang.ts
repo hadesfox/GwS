@@ -354,6 +354,10 @@ export function useGobang() {
     removedBy: "black" | "white";
   } | null>(null);
 
+  // 额外回合反制机制相关状态
+  const isExtraTurn = ref(false);
+  const potentialWinner = ref<Player>(null);
+
   // 使用技能
   const useSkill = (player: "black" | "white", skillId: SkillType): boolean => {
     const mana = player === "black" ? blackMana : whiteMana;
@@ -547,10 +551,49 @@ export function useGobang() {
           return false;
         }
 
-        // 将棋子放回原位
         const piece = lastRemovedPiece.value;
-        board.value[piece.row][piece.col] = piece.color;
-        moveHistory.value.push({ row: piece.row, col: piece.col });
+        let targetRow = piece.row;
+        let targetCol = piece.col;
+        
+        // 检查原位置是否为空
+        if (board.value[piece.row][piece.col] === null) {
+          // 原位置为空，直接放回原位
+          console.log("Honesty: placing piece back to original position");
+        } else {
+          // 原位置被占用，尝试在周围8个相邻位置寻找空位
+          console.log("Honesty: original position occupied, searching adjacent positions");
+          let foundEmpty = false;
+          
+          // 检查周围8个方向
+          const directions = [
+            [-1, -1], [-1, 0], [-1, 1],
+            [0, -1],           [0, 1],
+            [1, -1],  [1, 0],  [1, 1]
+          ];
+          
+          for (const [dr, dc] of directions) {
+            const r = piece.row + dr;
+            const c = piece.col + dc;
+            
+            // 检查位置是否在棋盘范围内且为空
+            if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && board.value[r][c] === null) {
+              targetRow = r;
+              targetCol = c;
+              foundEmpty = true;
+              console.log(`Honesty: found empty position at (${r}, ${c})`);
+              break;
+            }
+          }
+          
+          if (!foundEmpty) {
+            console.log("Cannot use Honesty - no empty positions available near the original position");
+            return false;
+          }
+        }
+
+        // 将棋子放置在目标位置
+        board.value[targetRow][targetCol] = piece.color;
+        moveHistory.value.push({ row: targetRow, col: targetCol });
 
         mana.value.current -= skill.manaCost;
 
@@ -612,10 +655,12 @@ export function useGobang() {
       }
 
       case "see-you": {
-        // 直接获胜
+        // 直接获胜（不受额外回合影响）
         mana.value.current -= skill.manaCost;
         winner.value = player;
         isGameOver.value = true;
+        isExtraTurn.value = false;
+        potentialWinner.value = null;
         console.log(`${player} used See You Again and wins!`);
         return true;
       }
@@ -642,6 +687,8 @@ export function useGobang() {
 
     winner.value = player;
     isGameOver.value = true;
+    isExtraTurn.value = false;
+    potentialWinner.value = null;
 
     skillState.value = {
       isSelecting: false,
@@ -828,9 +875,74 @@ export function useGobang() {
     updateManaByTotalMoves();
 
     if (checkWin(row, col)) {
-      winner.value = currentPlayer.value;
-      isGameOver.value = true;
-      return true;
+      // 检查是否已经在额外回合中
+      if (isExtraTurn.value) {
+        // 额外回合还能达成胜利，直接获胜
+        winner.value = currentPlayer.value;
+        isGameOver.value = true;
+        isExtraTurn.value = false;
+        potentialWinner.value = null;
+        return true;
+      } else {
+        // 第一次达成胜利条件，进入额外回合
+        potentialWinner.value = currentPlayer.value;
+        isExtraTurn.value = true;
+        console.log(`${currentPlayer.value}达成胜利条件，对方进入额外回合进行反制`);
+        
+        // 显示2秒弹窗提醒
+        const alertDiv = document.createElement('div');
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.top = '50%';
+        alertDiv.style.left = '50%';
+        alertDiv.style.transform = 'translate(-50%, -50%)';
+        alertDiv.style.padding = '20px 40px';
+        alertDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        alertDiv.style.color = 'white';
+        alertDiv.style.borderRadius = '8px';
+        alertDiv.style.fontSize = '18px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.textAlign = 'center';
+        alertDiv.textContent = '对方已达成胜利条件';
+        document.body.appendChild(alertDiv);
+        
+        // 2秒后移除弹窗
+        setTimeout(() => {
+          if (document.body.contains(alertDiv)) {
+            document.body.removeChild(alertDiv);
+          }
+        }, 2000);
+      }
+    }
+    
+    // 如果处于额外回合，且当前玩家是反制方，检查胜利条件是否被打破
+    if (isExtraTurn.value && currentPlayer.value !== potentialWinner.value) {
+      const winPositions = [];
+      let isWinStillValid = false;
+      
+      // 检查潜在获胜者是否仍然满足胜利条件
+      for (let r = 0; r < BOARD_SIZE && !isWinStillValid; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (board.value[r][c] === potentialWinner.value && checkWin(r, c)) {
+            isWinStillValid = true;
+            break;
+          }
+        }
+      }
+      
+      if (!isWinStillValid) {
+        // 胜利条件被打破，取消胜利
+        console.log(`${currentPlayer.value}成功反制，取消胜利`);
+        isExtraTurn.value = false;
+        potentialWinner.value = null;
+      } else {
+        // 额外回合结束，潜在获胜者正式获胜
+        console.log(`额外回合结束，反制失败，${potentialWinner.value}获胜`);
+        winner.value = potentialWinner.value;
+        isGameOver.value = true;
+        isExtraTurn.value = false;
+        potentialWinner.value = null;
+        return true;
+      }
     }
 
     if (moveHistory.value.length === BOARD_SIZE * BOARD_SIZE) {
@@ -1084,6 +1196,8 @@ export function useGobang() {
   fiveOffers.value = [];
   forbiddenMoves.value = [];
   hasSwapped.value = false;
+  isExtraTurn.value = false;
+  potentialWinner.value = null;
 
 // 根据法力值模式设置初始法力值
   if (manaGrowthMode.value === 'alternate') {
@@ -1157,6 +1271,8 @@ export function useGobang() {
     forbiddenMoves: forbiddenMoves.value,
     blackMana: blackMana.value,
     whiteMana: whiteMana.value,
+    isExtraTurn: isExtraTurn.value,
+    potentialWinner: potentialWinner.value,
   }));
 
   // 修改两极反转相关状态
@@ -1199,6 +1315,8 @@ export function useGobang() {
     lastRemovedPiece,
     reverseEffect,
     manaGrowthMode,
+    isExtraTurn,
+    potentialWinner,
     toggleManaGrowthMode,
     makeMove,
     undo,

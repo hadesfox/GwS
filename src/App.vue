@@ -293,6 +293,8 @@ watch(counterWindowOpen, (isOpen) => {
         :move-count="moveHistory.length"
         :mode="mode"
         :professional-phase="professionalPhase"
+        :is-extra-turn="isExtraTurn"
+        :potential-winner="potentialWinner"
       />
 
       <ProfessionalPanel

@@ -8,6 +8,8 @@ interface Props {
   moveCount: number;
   mode: GameMode;
   professionalPhase?: ProfessionalPhase;
+  isExtraTurn?: boolean;
+  potentialWinner?: Player;
 }
 
 const props = defineProps<Props>();
@@ -38,6 +40,14 @@ const getPhaseText = () => {
 
     <!-- 游戏状态 -->
     <div v-if="!isGameOver" class="current-state">
+      <!-- 额外回合提示 -->
+      <div v-if="isExtraTurn" class="extra-turn-notice">
+        ⚡ <span class="notice-text">
+          {{ potentialWinner === 'black' ? '黑棋' : '白棋' }}达成胜利条件！
+          {{ currentPlayer === 'black' ? '黑棋' : '白棋' }}进入反制回合
+        </span>
+      </div>
+      
       <div class="current-player">
         <span class="label">当前玩家：</span>
         <span class="player" :class="currentPlayer">
@@ -82,6 +92,35 @@ const getPhaseText = () => {
   border-radius: 10px;
   margin: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.extra-turn-notice {
+  background-color: rgba(255, 215, 0, 0.2);
+  border: 2px solid gold;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+.notice-text {
+  font-size: 16px;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
 }
 
 .mode-badge {

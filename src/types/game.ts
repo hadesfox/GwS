@@ -79,6 +79,8 @@ export interface GameState {
   forbiddenMoves?: Position[];  // 专业模式禁手位置
   blackMana?: ManaState;        // 黑方法力状态
   whiteMana?: ManaState;        // 白方法力状态
+  isExtraTurn?: boolean;        // 是否处于额外回合反制阶段
+  potentialWinner?: Player;     // 当前潜在的获胜者（额外回合阶段）
 }
 
 // 棋盘大小：15 x 15
