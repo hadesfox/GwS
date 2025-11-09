@@ -43,6 +43,6 @@ see you again：消耗三十点法力，直接获胜<br>
 
 ## 请作者喝杯咖啡
 
-![赞赏](public/zansang.png)
-![微信](public/wechat.png)
-![支付宝](public/zfb.jpg)
+<img src="public/zansang.png" width="30%" alt="赞赏"/>
+<img src="public/wechat.png" width="30%" alt="微信"/>
+<img src="public/zfb.jpg" width="30%" alt="支付宝"/>
