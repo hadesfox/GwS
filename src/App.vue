@@ -32,6 +32,7 @@ const {
   reverseEffect,
   lastRemovedPiece,
   manaGrowthMode,  // 确保这个被解构了
+  isExtraTurnEnabled,
   makeMove,
   undo,
   restart,
@@ -449,8 +450,10 @@ watch(counterWindowOpen, (isOpen) => {
 
       <GameControl
         :can-undo="canUndo"
+        :is-extra-turn-enabled="isExtraTurnEnabled"
         @undo="undo"
         @restart="restart"
+        @toggle-extra-turn="isExtraTurnEnabled = !isExtraTurnEnabled"
       />
 
       <div v-if="mode === 'professional' && forbiddenMoves.length > 0" class="hint-box">

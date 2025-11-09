@@ -40,3 +40,9 @@ see you again：消耗三十点法力，直接获胜<br>
 ### DLC技能（尚未实装效果）<br>
 地球自转母亲公转<br>
 冷酸灵智取王世昌<br>
+
+## 请作者喝杯咖啡
+
+![赞赏](public/zansang.png)
+![微信](public/wechat.png)
+![支付宝](public/zfb.jpg)

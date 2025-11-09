@@ -72,6 +72,9 @@ export function useGobang() {
 
   const diversionTurnsLeft = ref<number>(0);
 
+  // 反制回合开关状态
+  const isExtraTurnEnabled = ref(true);
+
   const lastMove = computed(() => {
     return moveHistory.value.length > 0
       ? moveHistory.value[moveHistory.value.length - 1]
@@ -883,8 +886,8 @@ export function useGobang() {
         isExtraTurn.value = false;
         potentialWinner.value = null;
         return true;
-      } else {
-        // 第一次达成胜利条件，进入额外回合
+      } else if (isExtraTurnEnabled.value) {
+        // 第一次达成胜利条件，且反制回合已启用，进入额外回合
         potentialWinner.value = currentPlayer.value;
         isExtraTurn.value = true;
         console.log(`${currentPlayer.value}达成胜利条件，对方进入额外回合进行反制`);
@@ -911,6 +914,11 @@ export function useGobang() {
             document.body.removeChild(alertDiv);
           }
         }, 2000);
+      } else {
+        // 反制回合未启用，直接获胜
+        winner.value = currentPlayer.value;
+        isGameOver.value = true;
+        return true;
       }
     }
     
@@ -1317,6 +1325,7 @@ export function useGobang() {
     manaGrowthMode,
     isExtraTurn,
     potentialWinner,
+    isExtraTurnEnabled,
     toggleManaGrowthMode,
     makeMove,
     undo,

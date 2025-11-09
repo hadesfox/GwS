@@ -2,10 +2,12 @@
 interface Emits {
   (e: 'undo'): void;
   (e: 'restart'): void;
+  (e: 'toggle-extra-turn'): void;
 }
 
 interface Props {
   canUndo: boolean;
+  isExtraTurnEnabled: boolean;
 }
 
 defineProps<Props>();
@@ -27,6 +29,15 @@ const emit = defineEmits<Emits>();
       @click="emit('restart')"
     >
       🔄 重新开始
+    </button>
+    
+    <button 
+      class="btn btn-extra-turn" 
+      :class="{ 'enabled': isExtraTurnEnabled }"
+      @click="emit('toggle-extra-turn')"
+    >
+      🛡️ 反制回合
+      <span class="switch-status">{{ isExtraTurnEnabled ? '开启' : '关闭' }}</span>
     </button>
   </div>
 </template>
@@ -72,5 +83,30 @@ const emit = defineEmits<Emits>();
 .btn-restart {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   color: white;
+}
+
+.btn-extra-turn {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-extra-turn.enabled {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #333;
+}
+
+.switch-status {
+  font-size: 14px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-extra-turn.enabled .switch-status {
+  background: rgba(0, 0, 0, 0.1);
 }
 </style>
