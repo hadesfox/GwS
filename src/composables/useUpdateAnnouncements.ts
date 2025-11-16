@@ -10,6 +10,12 @@ interface Announcement {
 // 存储更新公告数据
 const announcements: Announcement[] = [
   {
+  id: '2025-11-16',
+  title: '游戏更新公告',
+  content: '1. 优化了项目结构，主要给代码解耦，方便后续优化和改进',
+  date: '2025-11-16'
+  },
+  {
   id: '2025-11-09',
   title: '游戏功能更新公告',
   content: '1. 给反制回合增加了开关，玩家可以自选是否开启反制回合\n2.本项目开源地址github.com/hadesfox/GwS，有需要反馈的问题可以到项目仓库提交issue，或者到我的B站频道“狐漠离”反馈',

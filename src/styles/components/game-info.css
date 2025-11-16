@@ -1,0 +1,171 @@
+/* GameInfo 组件样式 */
+/* 游戏信息容器样式 */
+.game-info {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  margin: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.extra-turn-notice {
+  background-color: rgba(255, 215, 0, 0.2);
+  border: 2px solid gold;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+.notice-text {
+  font-size: 16px;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
+}
+
+.mode-badge {
+  margin-bottom: 15px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge.basic {
+  background: rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.badge.professional {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #333;
+  border: 2px solid #ffd700;
+  animation: shine 2s infinite;
+}
+
+@keyframes shine {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  }
+}
+
+.current-state {
+  margin-bottom: 10px;
+}
+
+.current-player {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.label {
+  margin-right: 10px;
+}
+
+.player {
+  padding: 5px 15px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.player.black {
+  background-color: #333;
+  color: white;
+}
+
+.player.white {
+  background-color: #fff;
+  color: #333;
+}
+
+.phase-info {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin-top: 10px;
+  display: inline-block;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.game-result {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  animation: bounce 0.5s ease;
+}
+
+.winner span {
+  display: inline-block;
+  padding: 5px 15px;
+  border-radius: 20px;
+  margin: 0 5px;
+}
+
+.winner .black {
+  background-color: #333;
+  color: white;
+}
+
+.winner .white {
+  background-color: #fff;
+  color: #333;
+}
+
+.draw {
+  color: #ffd700;
+}
+
+.stats {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.stat-label {
+  opacity: 0.9;
+}
+
+.stat-value {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}

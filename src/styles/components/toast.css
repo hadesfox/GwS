@@ -1,0 +1,56 @@
+/* Toast 组件样式 */
+/* 提示消息容器样式 */
+.toast {
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.toast-icon {
+  font-size: 18px;
+}
+
+.skip-turn {
+  background: linear-gradient(135deg, #9c27b0, #ba68c8);
+}
+
+.diversion {
+  background: linear-gradient(135deg, #e91e63, #f06292);
+}
+
+.ban-black {
+  background: linear-gradient(135deg, #424242, #616161);
+}
+
+.ban-white {
+  background: linear-gradient(135deg, #9e9e9e, #bdbdbd);
+}
+
+.honesty-black {
+  background: linear-gradient(135deg, #ffa726, #ff6f00);
+}
+
+.honesty-white {
+  background: linear-gradient(135deg, #ffd54f, #ffa000);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

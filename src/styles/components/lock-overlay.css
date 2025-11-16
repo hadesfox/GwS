@@ -1,0 +1,79 @@
+/* LockOverlay 组件样式 */
+/* 锁定遮罩容器样式 */
+.lock-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.lock-content {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.lock-icon {
+  font-size: 60px;
+  margin-bottom: 15px;
+  animation: pulse 1.5s infinite;
+}
+
+.lock-message {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.lock-player {
+  font-size: 16px;
+  font-weight: bold;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-block;
+}
+
+.lock-player.black {
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.lock-player.white {
+  background: rgba(255, 255, 255, 0.4);
+  color: #333;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}

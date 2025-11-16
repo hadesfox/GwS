@@ -1,0 +1,93 @@
+/* ProgressOverlay 组件样式 */
+/* 进度覆盖层容器样式 */
+.progress-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 998;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.progress-content {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  animation: slideUp 0.3s ease-out;
+  min-width: 280px;
+}
+
+.progress-message {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.progress-player {
+  font-size: 16px;
+  font-weight: bold;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-block;
+  margin-bottom: 15px;
+}
+
+.progress-player.black {
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.progress-player.white {
+  background: rgba(255, 255, 255, 0.4);
+  color: #333;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,1));
+  transition: width 0.3s ease;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.progress-text {
+  font-size: 14px;
+  opacity: 0.8;
+  font-weight: bold;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
