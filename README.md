@@ -4,10 +4,10 @@
 
 本项目是我在最后24小时临时参加活动用AI速通制作而成。<br>
 对游戏引擎不熟悉，从自己用过的开发语言里最后选用的vue来制作。<br>
-<img src="public/xiye.png" width="30%" alt="xiye"/><br>
+<img src="public/xiye.png" alt="xiye"/><br>
 
 灵感来自《喜人奇妙夜2》里的《技能五子棋》，所有技能的效果都是节目中对应技能的表演抽象而成，尽力还原节目里的感觉。<br>
-<img src="public/preview.png" width="30%" alt="preView"/><br>
+<img src="public/preview.png" alt="preView"/><br>
 
 由于没有经过具体的数值测算，可能很多技能不平衡。<br>
 开发时间比较紧，我只优化了用户的操作体验，美术UI之类的就来不及做了。<br>
@@ -20,17 +20,17 @@
 三手交换：黑棋天元；黑方下白在周围；黑棋天元或隔一格；白方直接走棋，或者交换黑白。<br>
 五手两打：第四手后，黑方下两个打点，让白方二选一。打点形状不能对称。<br>
 禁手：三三，黑棋不能下在三三点。四四，黑棋不能 下在四四点。长连，黑棋不能连成超过五子。<br>
-<img src="public/home.png" width="30%" alt="home"/><br>
+<img src="public/home.png"  alt="home"/><br>
 
 ### 法力值机制<br>
 双方加入法力条，标准模式两步加一点，快速模式每步加一点。<br>
-<img src="public/mana.png" width="30%" alt="mana"/><br>
+<img src="public/mana.png" alt="mana"/><br>
 
 ### 反制回合
 当一方达成五子连线的获胜条件后，另一方会获得一个反制回合。<br>
 在反制回合内如果能打断对方的五子连线，就可以继续游戏。<br>
 如果不能打断，对方则获得胜利。<br>
-<img src="public/skill.png" width="30%" alt="skill"/><br>
+<img src="public/skill.png" alt="skill"/><br>
 
 ### 技能机制<br>
 飞沙走石：消耗三点法力，指定一个棋子离开棋盘<br>
